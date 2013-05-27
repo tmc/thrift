@@ -160,6 +160,8 @@ gen-*
 /lib/hs/dist
 /lib/hs/Makefile
 /lib/hs/Makefile.in
+/lib/go/Makefile
+/lib/go/Makefile.in
 /lib/java/Makefile
 /lib/java/Makefile.in
 /lib/java/build
