@@ -190,7 +190,7 @@ func (p *TJSONProtocol) WriteBinary(v []byte) TProtocolException {
 	p.writer.Write(JSON_QUOTE_BYTES)
 	writer := base64.NewEncoder(base64.StdEncoding, p.writer)
 	if _, e := writer.Write(v); e != nil {
-		return NewTProtocolExceptionFromOsError(e)
+		return NewTProtocolExceptionFromError(e)
 	}
 	writer.Close()
 	p.writer.Write(JSON_QUOTE_BYTES)
@@ -388,7 +388,7 @@ func (p *TJSONProtocol) ReadString() (string, TProtocolException) {
 	} else if len(b) >= len(JSON_NULL) && string(b[0:len(JSON_NULL)]) == string(JSON_NULL) {
 		_, err := p.reader.Read(b[0:len(JSON_NULL)])
 		if err != nil {
-			return v, NewTProtocolExceptionFromOsError(err)
+			return v, NewTProtocolExceptionFromError(err)
 		}
 	} else {
 		return v, NewTProtocolException(INVALID_DATA, fmt.Sprint("Expected a JSON string, found ", string(b)))
@@ -412,7 +412,7 @@ func (p *TJSONProtocol) ReadBinary() ([]byte, TProtocolException) {
 	} else if len(b) >= len(JSON_NULL) && string(b[0:len(JSON_NULL)]) == string(JSON_NULL) {
 		_, err := p.reader.Read(b[0:len(JSON_NULL)])
 		if err != nil {
-			return v, NewTProtocolExceptionFromOsError(err)
+			return v, NewTProtocolExceptionFromError(err)
 		}
 	} else {
 		return v, NewTProtocolException(INVALID_DATA, fmt.Sprint("Expected a JSON string, found ", string(b)))
@@ -421,7 +421,7 @@ func (p *TJSONProtocol) ReadBinary() ([]byte, TProtocolException) {
 }
 
 func (p *TJSONProtocol) Flush() (err TProtocolException) {
-	return NewTProtocolExceptionFromOsError(p.writer.Flush())
+	return NewTProtocolExceptionFromError(p.writer.Flush())
 }
 
 func (p *TJSONProtocol) Skip(fieldType TType) (err TProtocolException) {

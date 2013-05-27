@@ -42,7 +42,7 @@ func NewTException(m string) TException {
 	return &tException{message: m}
 }
 
-func NewTExceptionFromOsError(e error) TException {
+func NewTExceptionFromError(e error) TException {
 	if e == nil {
 		return nil
 	}

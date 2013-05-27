@@ -188,7 +188,7 @@ func (p *TSocket) Read(buf []byte) (int, error) {
 	}
 	p.pushDeadline(true, false)
 	n, err := p.conn.Read(buf)
-	return n, NewTTransportExceptionFromOsError(err)
+	return n, NewTTransportExceptionFromError(err)
 }
 
 func (p *TSocket) ReadAll(buf []byte) (int, error) {
@@ -213,7 +213,7 @@ func (p *TSocket) Flush() error {
 		return NewTTransportException(NOT_OPEN, "Connection not open")
 	}
 	_, err := p.writeBuffer.WriteTo(p.conn)
-	return NewTTransportExceptionFromOsError(err)
+	return NewTTransportExceptionFromError(err)
 }
 
 func (p *TSocket) Interrupt() error {

@@ -127,15 +127,15 @@ func NewTCompactProtocol(trans TTransport) *TCompactProtocol {
 func (p *TCompactProtocol) WriteMessageBegin(name string, typeId TMessageType, seqid int32) TProtocolException {
 	_, err := p.writeByteDirect(COMPACT_PROTOCOL_ID)
 	if err != nil {
-		return NewTProtocolExceptionFromOsError(err)
+		return NewTProtocolExceptionFromError(err)
 	}
 	_, err = p.writeByteDirect((COMPACT_VERSION & COMPACT_VERSION_MASK) | ((byte(typeId) << COMPACT_TYPE_SHIFT_AMOUNT) & COMPACT_TYPE_MASK))
 	if err != nil {
-		return NewTProtocolExceptionFromOsError(err)
+		return NewTProtocolExceptionFromError(err)
 	}
 	_, err = p.writeVarint32(seqid)
 	if err != nil {
-		return NewTProtocolExceptionFromOsError(err)
+		return NewTProtocolExceptionFromError(err)
 	}
 	e := p.WriteString(name)
 	return e
@@ -173,7 +173,7 @@ func (p *TCompactProtocol) WriteFieldBegin(name string, typeId TType, id int16) 
 		return nil
 	}
 	_, err := p.writeFieldBeginInternal(name, typeId, id, 0xFF)
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 /**
@@ -222,20 +222,20 @@ func (p *TCompactProtocol) WriteFieldEnd() TProtocolException { return nil }
 
 func (p *TCompactProtocol) WriteFieldStop() TProtocolException {
 	_, err := p.writeByteDirect(STOP)
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 func (p *TCompactProtocol) WriteMapBegin(keyType TType, valueType TType, size int) TProtocolException {
 	if size == 0 {
 		_, err := p.writeByteDirect(0)
-		return NewTProtocolExceptionFromOsError(err)
+		return NewTProtocolExceptionFromError(err)
 	}
 	_, err := p.writeVarint32(int32(size))
 	if err != nil {
-		return NewTProtocolExceptionFromOsError(err)
+		return NewTProtocolExceptionFromError(err)
 	}
 	_, err = p.writeByteDirect(byte(p.getCompactType(keyType))<<4 | byte(p.getCompactType(valueType)))
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 func (p *TCompactProtocol) WriteMapEnd() TProtocolException { return nil }
@@ -245,7 +245,7 @@ func (p *TCompactProtocol) WriteMapEnd() TProtocolException { return nil }
  */
 func (p *TCompactProtocol) WriteListBegin(elemType TType, size int) TProtocolException {
 	_, err := p.writeCollectionBegin(elemType, size)
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 func (p *TCompactProtocol) WriteListEnd() TProtocolException { return nil }
@@ -255,7 +255,7 @@ func (p *TCompactProtocol) WriteListEnd() TProtocolException { return nil }
  */
 func (p *TCompactProtocol) WriteSetBegin(elemType TType, size int) TProtocolException {
 	_, err := p.writeCollectionBegin(elemType, size)
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 func (p *TCompactProtocol) WriteSetEnd() TProtocolException { return nil }
@@ -269,11 +269,11 @@ func (p *TCompactProtocol) WriteBool(value bool) TProtocolException {
 		// we haven't written the field header yet
 		_, err := p.writeFieldBeginInternal(p.booleanField.Name(), p.booleanField.TypeId(), int16(p.booleanField.Id()), v)
 		p.booleanField = nil
-		return NewTProtocolExceptionFromOsError(err)
+		return NewTProtocolExceptionFromError(err)
 	}
 	// we're not part of a field, so just write the value.
 	_, err := p.writeByteDirect(v)
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 /**
@@ -281,7 +281,7 @@ func (p *TCompactProtocol) WriteBool(value bool) TProtocolException {
  */
 func (p *TCompactProtocol) WriteByte(value byte) TProtocolException {
 	_, err := p.writeByteDirect(value)
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 /**
@@ -289,7 +289,7 @@ func (p *TCompactProtocol) WriteByte(value byte) TProtocolException {
  */
 func (p *TCompactProtocol) WriteI16(value int16) TProtocolException {
 	_, err := p.writeVarint32(p.int32ToZigzag(int32(value)))
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 /**
@@ -297,7 +297,7 @@ func (p *TCompactProtocol) WriteI16(value int16) TProtocolException {
  */
 func (p *TCompactProtocol) WriteI32(value int32) TProtocolException {
 	_, err := p.writeVarint32(p.int32ToZigzag(value))
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 /**
@@ -305,7 +305,7 @@ func (p *TCompactProtocol) WriteI32(value int32) TProtocolException {
  */
 func (p *TCompactProtocol) WriteI64(value int64) TProtocolException {
 	_, err := p.writeVarint64(p.int64ToZigzag(value))
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 /**
@@ -315,7 +315,7 @@ func (p *TCompactProtocol) WriteDouble(value float64) TProtocolException {
 	buf := make([]byte, 8)
 	binary.LittleEndian.PutUint64(buf, math.Float64bits(value))
 	_, err := p.trans.Write(buf)
-	return NewTProtocolExceptionFromOsError(err)
+	return NewTProtocolExceptionFromError(err)
 }
 
 /**
@@ -333,11 +333,11 @@ func (p *TCompactProtocol) WriteString(value string) TProtocolException {
 func (p *TCompactProtocol) WriteBinary(bin []byte) TProtocolException {
 	_, e := p.writeVarint32(int32(len(bin)))
 	if e != nil {
-		return NewTProtocolExceptionFromOsError(e)
+		return NewTProtocolExceptionFromError(e)
 	}
 	if len(bin) > 0 {
 		_, e = p.trans.Write(bin)
-		return NewTProtocolExceptionFromOsError(e)
+		return NewTProtocolExceptionFromError(e)
 	}
 	return nil
 }
@@ -368,7 +368,7 @@ func (p *TCompactProtocol) ReadMessageBegin() (name string, typeId TMessageType,
 	}
 	seqId, e := p.readVarint32()
 	if e != nil {
-		err = NewTProtocolExceptionFromOsError(e)
+		err = NewTProtocolExceptionFromError(e)
 		return
 	}
 	name, err = p.ReadString()
@@ -425,7 +425,7 @@ func (p *TCompactProtocol) ReadFieldBegin() (name string, typeId TType, id int16
 	}
 	typeId, e := p.getTType(TCompactType(t & 0x0f))
 	if e != nil {
-		err = NewTProtocolExceptionFromOsError(e)
+		err = NewTProtocolExceptionFromError(e)
 		return
 	}
 
@@ -452,7 +452,7 @@ func (p *TCompactProtocol) ReadMapBegin() (keyType TType, valueType TType, size 
 	size32, e := p.readVarint32()
 	size = int(size32)
 	if e != nil {
-		err = NewTProtocolExceptionFromOsError(e)
+		err = NewTProtocolExceptionFromError(e)
 		return
 	}
 	keyAndValueType := byte(STOP)
@@ -484,14 +484,14 @@ func (p *TCompactProtocol) ReadListBegin() (elemType TType, size int, err TProto
 	if size == 15 {
 		size2, e := p.readVarint32()
 		if e != nil {
-			err = NewTProtocolExceptionFromOsError(e)
+			err = NewTProtocolExceptionFromError(e)
 			return
 		}
 		size = int(size2)
 	}
 	elemType, e := p.getTType(TCompactType(size_and_type))
 	if e != nil {
-		err = NewTProtocolExceptionFromOsError(e)
+		err = NewTProtocolExceptionFromError(e)
 		return
 	}
 	return
@@ -532,7 +532,7 @@ func (p *TCompactProtocol) ReadByte() (value byte, err TProtocolException) {
 	buf := []byte{0}
 	_, e := p.trans.ReadAll(buf)
 	if e != nil {
-		return 0, NewTProtocolExceptionFromOsError(e)
+		return 0, NewTProtocolExceptionFromError(e)
 	}
 	return buf[0], nil
 }
@@ -551,7 +551,7 @@ func (p *TCompactProtocol) ReadI16() (value int16, err TProtocolException) {
 func (p *TCompactProtocol) ReadI32() (value int32, err TProtocolException) {
 	v, e := p.readVarint32()
 	if e != nil {
-		return 0, NewTProtocolExceptionFromOsError(e)
+		return 0, NewTProtocolExceptionFromError(e)
 	}
 	value = p.zigzagToInt32(v)
 	return value, nil
@@ -563,7 +563,7 @@ func (p *TCompactProtocol) ReadI32() (value int32, err TProtocolException) {
 func (p *TCompactProtocol) ReadI64() (value int64, err TProtocolException) {
 	v, e := p.readVarint64()
 	if e != nil {
-		return 0, NewTProtocolExceptionFromOsError(e)
+		return 0, NewTProtocolExceptionFromError(e)
 	}
 	value = p.zigzagToInt64(v)
 	return value, nil
@@ -576,7 +576,7 @@ func (p *TCompactProtocol) ReadDouble() (value float64, err TProtocolException) 
 	longBits := make([]byte, 8)
 	_, e := p.trans.ReadAll(longBits)
 	if e != nil {
-		return 0.0, NewTProtocolExceptionFromOsError(e)
+		return 0.0, NewTProtocolExceptionFromError(e)
 	}
 	return math.Float64frombits(p.bytesToUint64(longBits)), nil
 }
@@ -586,7 +586,7 @@ func (p *TCompactProtocol) ReadDouble() (value float64, err TProtocolException) 
  */
 func (p *TCompactProtocol) ReadString() (value string, err TProtocolException) {
 	v, e := p.ReadBinary()
-	return string(v), NewTProtocolExceptionFromOsError(e)
+	return string(v), NewTProtocolExceptionFromError(e)
 }
 
 /**
@@ -595,7 +595,7 @@ func (p *TCompactProtocol) ReadString() (value string, err TProtocolException) {
 func (p *TCompactProtocol) ReadBinary() (value []byte, err TProtocolException) {
 	length, e := p.readVarint32()
 	if e != nil {
-		return []byte{}, NewTProtocolExceptionFromOsError(e)
+		return []byte{}, NewTProtocolExceptionFromError(e)
 	}
 	if length == 0 {
 		return []byte{}, nil
@@ -607,7 +607,7 @@ func (p *TCompactProtocol) ReadBinary() (value []byte, err TProtocolException) {
 }
 
 func (p *TCompactProtocol) Flush() (err TProtocolException) {
-	return NewTProtocolExceptionFromOsError(p.trans.Flush())
+	return NewTProtocolExceptionFromError(p.trans.Flush())
 }
 
 func (p *TCompactProtocol) Skip(fieldType TType) (err TProtocolException) {

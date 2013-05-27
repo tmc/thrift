@@ -69,7 +69,7 @@ func NewTTransportException(t int, m string) TTransportException {
 	return &tTransportException{typeId: t, message: m}
 }
 
-func NewTTransportExceptionFromOsError(e error) TTransportException {
+func NewTTransportExceptionFromError(e error) TTransportException {
 	if e == nil {
 		return nil
 	}

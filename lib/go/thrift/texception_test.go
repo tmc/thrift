@@ -29,7 +29,7 @@ func TestTException(t *testing.T) {
 	if exc.Error() != "" {
 		t.Fatalf("Expected empty string for exception but found '%s'", exc.Error())
 	}
-	exc = NewTExceptionFromOsError(io.EOF)
+	exc = NewTExceptionFromError(io.EOF)
 	if exc.Error() != io.EOF.Error() {
 		t.Fatalf("Expected '%s', but found '%s'", io.EOF.Error(), exc.Error())
 	}

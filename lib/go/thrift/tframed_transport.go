@@ -68,7 +68,7 @@ func (p *TFramedTransport) Read(buf []byte) (int, error) {
 	if p.readBuffer.Len() > 0 {
 		got, err := p.readBuffer.Read(buf)
 		if got > 0 {
-			return got, NewTTransportExceptionFromOsError(err)
+			return got, NewTTransportExceptionFromError(err)
 		}
 	}
 
@@ -76,7 +76,7 @@ func (p *TFramedTransport) Read(buf []byte) (int, error) {
 	p.readFrame()
 
 	got, err := p.readBuffer.Read(buf)
-	return got, NewTTransportExceptionFromOsError(err)
+	return got, NewTTransportExceptionFromError(err)
 }
 
 func (p *TFramedTransport) ReadAll(buf []byte) (int, error) {
@@ -85,7 +85,7 @@ func (p *TFramedTransport) ReadAll(buf []byte) (int, error) {
 
 func (p *TFramedTransport) Write(buf []byte) (int, error) {
 	n, err := p.writeBuffer.Write(buf)
-	return n, NewTTransportExceptionFromOsError(err)
+	return n, NewTTransportExceptionFromError(err)
 }
 
 func (p *TFramedTransport) Flush() error {
@@ -94,17 +94,16 @@ func (p *TFramedTransport) Flush() error {
 	binary.BigEndian.PutUint32(buf, uint32(size))
 	_, err := p.transport.Write(buf)
 	if err != nil {
-		return NewTTransportExceptionFromOsError(err)
+		return NewTTransportExceptionFromError(err)
 	}
 	if size > 0 {
-		n, err := p.writeBuffer.WriteTo(p.transport)
-		if err != nil {
+		if n, err := p.writeBuffer.WriteTo(p.transport); err != nil {
 			print("Error while flushing write buffer of size ", size, " to transport, only wrote ", n, " bytes: ", err, "\n")
-			return NewTTransportExceptionFromOsError(err)
+			return NewTTransportExceptionFromError(err)
 		}
 	}
 	err = p.transport.Flush()
-	return NewTTransportExceptionFromOsError(err)
+	return NewTTransportExceptionFromError(err)
 }
 
 func (p *TFramedTransport) readFrame() (int, error) {

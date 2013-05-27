@@ -106,7 +106,7 @@ func NewTProtocolExceptionWriteStruct(structName string, e TProtocolException) T
 	return NewTProtocolException(t, "Unable to write struct "+structName+" due to: "+e.Error())
 }
 
-func NewTProtocolExceptionFromOsError(e error) TProtocolException {
+func NewTProtocolExceptionFromError(e error) TProtocolException {
 	if e == nil {
 		return nil
 	}

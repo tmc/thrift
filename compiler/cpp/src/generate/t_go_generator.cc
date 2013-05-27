@@ -52,6 +52,8 @@ using namespace std;
  */
 bool format_go_output(const string &file_path);
 
+const string default_thrift_import = "git.apache.org/thrift/lib/go/thrift";
+
 /**
  * Go code generator.
  */
@@ -65,6 +67,19 @@ public:
         : t_generator(program) {
         std::map<std::string, std::string>::const_iterator iter;
         out_dir_base_ = "gen-go";
+        gen_thrift_import_ = default_thrift_import;
+
+        iter = parsed_options.find("package_prefix");
+
+        if (iter != parsed_options.end()) {
+            gen_package_prefix_ = (iter->second);
+        }
+
+        iter = parsed_options.find("thrift_import");
+
+        if (iter != parsed_options.end()) {
+            gen_thrift_import_ = (iter->second);
+        }
     }
 
     /**
@@ -202,14 +217,15 @@ public:
 
     std::string go_autogen_comment();
     std::string go_package();
-    std::string go_imports();
+    std::string go_imports_begin();
+    std::string go_imports_end();
     std::string render_includes();
     std::string render_fastbinary_includes();
     std::string declare_argument(t_field* tfield);
     std::string render_field_default_value(t_field* tfield, const string& name);
     std::string type_name(t_type* ttype);
     std::string function_signature(t_function* tfunction, std::string prefix = "");
-    std::string function_signature_if(t_function* tfunction, std::string prefix = "", bool addOsError = false);
+    std::string function_signature_if(t_function* tfunction, std::string prefix = "", bool addError = false);
     std::string argument_list(t_struct* tstruct);
     std::string type_to_enum(t_type* ttype);
     std::string type_to_go_type(t_type* ttype);
@@ -226,6 +242,9 @@ public:
     }
 
 private:
+
+    std::string gen_package_prefix_;
+    std::string gen_thrift_import_;
 
     /**
      * File streams
@@ -474,9 +493,9 @@ void t_go_generator::init_generator()
     f_types_ <<
              go_autogen_comment() <<
              go_package() <<
-             go_imports() <<
-             render_includes() <<
-             render_fastbinary_includes() << endl << endl;
+             go_imports_begin() <<
+             render_fastbinary_includes() <<
+             go_imports_end();
 }
 
 /**
@@ -488,7 +507,7 @@ string t_go_generator::render_includes()
     string result = "";
 
     for (size_t i = 0; i < includes.size(); ++i) {
-        result += "import \"" + get_real_go_module(includes[i]) + "\"\n";
+        result += "\t\"" + gen_package_prefix_ + get_real_go_module(includes[i]) + "\"\n";
     }
 
     if (includes.size() > 0) {
@@ -524,29 +543,34 @@ string t_go_generator::go_autogen_comment()
  */
 string t_go_generator::go_package()
 {
-    return string("package ") + package_name_ + ";\n\n";
+    return string("package ") + package_name_ + "\n\n";
 }
 
 /**
- * Prints standard thrift imports
+ * Render the beginning of the import statement
  */
-string t_go_generator::go_imports()
+string t_go_generator::go_imports_begin()
 {
     return
         string("import (\n"
                "\t\"fmt\"\n"
                "\t\"math\"\n"
-               "\t\"thrift\"\n"
-               ")\n\n"
-               "// This is a temporary safety measure to ensure that the `math'\n"
-               "// import does not trip up any generated output that may not\n"
-               "// happen to use the math import due to not having emited enums.\n"
-               "//\n"
-               "// Future clean-ups will deprecate the need for this.\n"
-               "func init() {\n"
-               "\tvar temporaryAndUnused int32 = math.MinInt32\n"
-               "\ttemporaryAndUnused++\n"
-               "}\n\n");
+               "\t\"" + gen_thrift_import_ + "\"\n");
+}
+
+/**
+ * End the import statement, include undscore-assignments
+ *
+ * These "_ =" prevent the go compiler complaining about used imports.
+ * This will have to do in lieu of more intelligent import statement construction
+ */
+string t_go_generator::go_imports_end()
+{
+    return
+        string(
+            ")\n\n"
+            "// (needed to ensure safety because of naive import list constrution.)\n"
+            "var _ = math.MinInt32\n\n");
 }
 
 /**
@@ -1406,19 +1430,15 @@ void t_go_generator::generate_service(t_service* tservice)
     f_service_ <<
                go_autogen_comment() <<
                go_package() <<
-               go_imports();
+               go_imports_begin();
 
     if (tservice->get_extends() != NULL) {
-        f_service_ <<
-                   "import \"" << get_real_go_module(tservice->get_extends()->get_program()) << "\"" << endl;
+        f_service_ << "\t\"" << gen_package_prefix_ + get_real_go_module(tservice->get_extends()->get_program()) << "\"\n";
     }
 
-    f_service_ <<
-               //             "import (" << endl <<
-               // indent() << "        \"os\"" << endl <<
-               // indent() << ")" << endl << endl <<
-               render_fastbinary_includes();
-    f_service_ << endl;
+    f_service_ << render_fastbinary_includes();
+    f_service_ << go_imports_end();
+
     generate_service_interface(tservice);
     generate_service_client(tservice);
     generate_service_server(tservice);
@@ -1529,6 +1549,7 @@ void t_go_generator::generate_service_interface(t_service* tservice)
 void t_go_generator::generate_service_client(t_service* tservice)
 {
     string extends = "";
+    string extends_field = "";
     string extends_client = "";
     string extends_client_new = "";
     string serviceName(publicize(tservice->get_name()));
@@ -1545,6 +1566,8 @@ void t_go_generator::generate_service_client(t_service* tservice)
             extends_client_new = "New" + extends_client;
         }
     }
+
+    extends_field = extends_client.substr(extends_client.find(".") + 1);
 
     generate_go_docstring(f_service_, tservice);
     f_service_ <<
@@ -1576,7 +1599,7 @@ void t_go_generator::generate_service_client(t_service* tservice)
 
     if (!extends.empty()) {
         f_service_ <<
-                   "{" << extends_client << ": " << extends_client_new << "Factory(t, f)}";
+                   "{" << extends_field << ": " << extends_client_new << "Factory(t, f)}";
     } else {
         indent_up();
         f_service_ << "{Transport: t," << endl <<
@@ -1602,7 +1625,7 @@ void t_go_generator::generate_service_client(t_service* tservice)
 
     if (!extends.empty()) {
         f_service_ <<
-                   "{" << extends_client << ": " << extends_client_new << "Protocol(t, iprot, oprot)}" << endl;
+                   "{" << extends_field << ": " << extends_client_new << "Protocol(t, iprot, oprot)}" << endl;
     } else {
         indent_up();
         f_service_ << "{Transport: t," << endl <<
@@ -1818,7 +1841,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "        \"net/url\"" << endl <<
              indent() << "        \"os\"" << endl <<
              indent() << "        \"strconv\"" << endl <<
-             indent() << "        \"thrift\"" << endl <<
+             indent() << "        \"" + gen_thrift_import_ + "\"" << endl <<
              indent() << "        \"" << service_module << "\"" << endl <<
              indent() << ")" << endl <<
              indent() << endl <<
@@ -3124,7 +3147,7 @@ string t_go_generator::function_signature(t_function* tfunction,
  */
 string t_go_generator::function_signature_if(t_function* tfunction,
         string prefix,
-        bool addOsError)
+        bool addError)
 {
     // TODO(mcslee): Nitpicky, no ',' if argument_list is empty
     string signature = publicize(prefix + tfunction->get_name()) + "(";
@@ -3137,7 +3160,7 @@ string t_go_generator::function_signature_if(t_function* tfunction,
     if (!ret->is_void()) {
         signature += retval + " " + type_to_go_type(ret);
 
-        if (addOsError || errs.size() == 0) {
+        if (addError || errs.size() == 0) {
             signature += ", ";
         }
     }
@@ -3145,12 +3168,12 @@ string t_go_generator::function_signature_if(t_function* tfunction,
     if (errs.size() > 0) {
         signature += errs;
 
-        if (addOsError) {
+        if (addError) {
             signature += ", ";
         }
     }
 
-    if (addOsError) {
+    if (addError) {
         signature += "err error";
     }
 
@@ -3405,4 +3428,6 @@ bool format_go_output(const string &file_path)
 }
 
 
-THRIFT_REGISTER_GENERATOR(go, "Go", "");
+THRIFT_REGISTER_GENERATOR(go, "Go",
+                          "    package_prefix= Package prefix for generated files.\n" \
+                          "    thrift_import=  Override thrift package import path (default:" + default_thrift_import + ")\n")

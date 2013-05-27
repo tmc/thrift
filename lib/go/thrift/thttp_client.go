@@ -119,7 +119,7 @@ func (p *THttpClient) Read(buf []byte) (int, error) {
 		return 0, NewTTransportException(NOT_OPEN, "Response buffer is empty, no request.")
 	}
 	n, err := p.response.Body.Read(buf)
-	return n, NewTTransportExceptionFromOsError(err)
+	return n, NewTTransportExceptionFromError(err)
 }
 
 func (p *THttpClient) ReadAll(buf []byte) (int, error) {
@@ -134,7 +134,7 @@ func (p *THttpClient) Write(buf []byte) (int, error) {
 func (p *THttpClient) Flush() error {
 	response, err := http.Post(p.url.String(), "application/x-thrift", p.requestBuffer)
 	if err != nil {
-		return NewTTransportExceptionFromOsError(err)
+		return NewTTransportExceptionFromError(err)
 	}
 	if response.StatusCode != http.StatusOK {
 		// TODO(pomack) log bad response

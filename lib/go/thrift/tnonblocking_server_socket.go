@@ -141,7 +141,7 @@ func (p *TNonblockingServerSocket) Accept() (TTransport, error) {
 	}
 	conn, err := p.listener.Accept()
 	if err != nil {
-		return nil, NewTTransportExceptionFromOsError(err)
+		return nil, NewTTransportExceptionFromError(err)
 	}
 	return NewTSocketConnTimeout(conn, p.nsecTimeout)
 }
@@ -157,7 +157,7 @@ func (p *TNonblockingServerSocket) Close() (err error) {
 	if p.IsOpen() {
 		err := p.listener.Close()
 		if err != nil {
-			return NewTTransportExceptionFromOsError(err)
+			return NewTTransportExceptionFromError(err)
 		}
 		p.listener = nil
 	}

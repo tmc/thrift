@@ -188,7 +188,7 @@ func (p *TIOStreamTransport) Read(buf []byte) (int, error) {
 		return 0, NewTTransportException(NOT_OPEN, "Cannot read from null inputStream")
 	}
 	n, err := p.Reader.Read(buf)
-	return n, NewTTransportExceptionFromOsError(err)
+	return n, NewTTransportExceptionFromError(err)
 }
 
 func (p *TIOStreamTransport) ReadAll(buf []byte) (int, error) {
@@ -207,7 +207,7 @@ func (p *TIOStreamTransport) Write(buf []byte) (int, error) {
 	if n == 0 || err != nil {
 		LOGGER.Print("Error writing to iostream, only wrote ", n, " bytes: ", err, "\n")
 	}
-	return n, NewTTransportExceptionFromOsError(err)
+	return n, NewTTransportExceptionFromError(err)
 }
 
 /**
@@ -221,7 +221,7 @@ func (p *TIOStreamTransport) Flush() error {
 	if ok {
 		err := f.Flush()
 		if err != nil {
-			return NewTTransportExceptionFromOsError(err)
+			return NewTTransportExceptionFromError(err)
 		}
 	}
 	return nil

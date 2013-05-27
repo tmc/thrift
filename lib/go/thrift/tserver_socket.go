@@ -95,7 +95,7 @@ func (p *TServerSocket) Listen() (err error) {
 func (p *TServerSocket) Accept() (TTransport, error) {
 	if p.listener == nil {
 		if err := p.Listen(); err != nil {
-			return nil, NewTTransportExceptionFromOsError(err)
+			return nil, NewTTransportExceptionFromError(err)
 		}
 		if p.listener == nil {
 			return nil, NewTTransportException(NOT_OPEN, "No underlying server socket")
@@ -103,7 +103,7 @@ func (p *TServerSocket) Accept() (TTransport, error) {
 	}
 	conn, err := p.listener.Accept()
 	if err != nil {
-		return nil, NewTTransportExceptionFromOsError(err)
+		return nil, NewTTransportExceptionFromError(err)
 	}
 	return NewTSocketConnTimeout(conn, p.nsecClientTimeout)
 }
@@ -170,14 +170,14 @@ func (p *TServerSocket) Close() (err error) {
 	if p.IsOpen() {
 		err := p.listener.Close()
 		if err != nil {
-			return NewTTransportExceptionFromOsError(err)
+			return NewTTransportExceptionFromError(err)
 		}
 		p.listener = nil
 	}
 	if p.conn != nil {
 		err := p.conn.Close()
 		if err != nil {
-			return NewTTransportExceptionFromOsError(err)
+			return NewTTransportExceptionFromError(err)
 		}
 		p.conn = nil
 	}
@@ -186,5 +186,5 @@ func (p *TServerSocket) Close() (err error) {
 
 func (p *TServerSocket) Interrupt() error {
 	// TODO(pomack) fix Interrupt as it is probably not right
-	return NewTTransportExceptionFromOsError(p.Close())
+	return NewTTransportExceptionFromError(p.Close())
 }

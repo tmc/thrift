@@ -136,7 +136,7 @@ func (p *TNonblockingSocket) Read(buf []byte) (int, error) {
 	}
 	p.pushDeadline(true, false)
 	n, err := p.conn.Read(buf)
-	return n, NewTTransportExceptionFromOsError(err)
+	return n, NewTTransportExceptionFromError(err)
 }
 
 func (p *TNonblockingSocket) ReadAll(buf []byte) (int, error) {
@@ -165,7 +165,7 @@ func (p *TNonblockingSocket) Flush() error {
 	if ok {
 		err := f.Flush()
 		if err != nil {
-			return NewTTransportExceptionFromOsError(err)
+			return NewTTransportExceptionFromError(err)
 		}
 	}
 	return nil
