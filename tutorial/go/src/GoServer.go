@@ -21,62 +21,29 @@ package main
 
 import (
 	"fmt"
-	"net"
-	"thrift"
-	"thriftlib/tutorial"
+	"git.apache.org/thrift/lib/go/thrift"
+	"tutorial"
 )
 
-type GoServer struct {
-	handler   tutorial.ICalculator
-	processor *tutorial.CalculatorProcessor
-}
-
-func NewGoServer() *GoServer {
-	handler := NewCalculatorHandler()
-	processor := tutorial.NewCalculatorProcessor(handler)
-	return &GoServer{handler: handler, processor: processor}
-}
-
-func Simple(processor *tutorial.CalculatorProcessor, transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory, ch chan int) {
+func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory) {
 	addr, err := net.ResolveTCPAddr("tcp", "localhost:9090")
 	if err != nil {
-		fmt.Print("Error resolving address: ", err.String(), "\n")
+		fmt.Println("Error resolving address: ", err)
 		return
 	}
-	serverTransport, err := thrift.NewTServerSocketAddr(addr)
+
+	handler := NewCalculatorHandler()
+	processor := tutorial.NewCalculatorProcessor(handler)
+	transport, err := thrift.NewTServerSocketAddr(addr)
 	if err != nil {
-		fmt.Print("Error creating server socket: ", err.String(), "\n")
+		fmt.Println("Error creating server socket: ", err)
 		return
 	}
-	server := thrift.NewTSimpleServer4(processor, serverTransport, transportFactory, protocolFactory)
-	// Use this for a multithreaded server
-	// TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));
 
-	fmt.Print("Starting the simple server... on ", addr, "\n")
-	for {
-		err = server.Serve()
-		if err != nil {
-			fmt.Print("Error during simple server: ", err.String(), "\n")
-			return
-		}
+	server := thrift.NewTSimpleServer4(processor, transport, transportFactory, protocolFactory)
+
+	fmt.Println("Starting the simple server... on ", addr)
+	if err = server.Serve(); err != nil {
+		fmt.Println("Error during simple server: ", err)
 	}
-	fmt.Print("Done with the simple server\n")
-	ch <- 1
-}
-
-func Secure(processor *tutorial.CalculatorProcessor) {
-	addr, _ := net.ResolveTCPAddr("tcp", "localhost:9091")
-	serverTransport, _ := thrift.NewTNonblockingServerSocketAddr(addr)
-	server := thrift.NewTSimpleServer2(processor, serverTransport)
-	fmt.Print("Starting the secure server... on ", addr, "\n")
-	server.Serve()
-	fmt.Print("Done with the secure server\n")
-}
-
-func RunServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory) {
-	server := NewGoServer()
-	ch := make(chan int)
-	go Simple(server.processor, transportFactory, protocolFactory, ch)
-	//go Secure(server.processor)
-	_ = <-ch
 }

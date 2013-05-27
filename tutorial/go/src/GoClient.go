@@ -21,13 +21,11 @@ package main
 
 import (
 	"fmt"
-	"net"
-	"os"
-	"thrift"
-	"thriftlib/tutorial"
+	"git.apache.org/thrift/lib/go/thrift"
+	"tutorial"
 )
 
-func Perform(client *tutorial.CalculatorClient) (err os.Error) {
+func handleClient(client *tutorial.CalculatorClient) (err error) {
 	client.Ping()
 	fmt.Print("ping()\n")
 
@@ -35,12 +33,12 @@ func Perform(client *tutorial.CalculatorClient) (err os.Error) {
 	fmt.Print("1+1=", sum, "\n")
 
 	work := tutorial.NewWork()
-	work.Op = tutorial.DIVIDE
+	work.Op = tutorial.Operation_DIVIDE
 	work.Num1 = 1
 	work.Num2 = 0
 	quotient, ouch, err := client.Calculate(1, work)
 	if err != nil {
-		fmt.Print("Error during operation: ", err.String(), "\n")
+		fmt.Print("Error during operation: ", err.Error(), "\n")
 		return err
 	} else if ouch != nil {
 		fmt.Print("Invalid operation: ", ouch.String(), "\n")
@@ -48,12 +46,12 @@ func Perform(client *tutorial.CalculatorClient) (err os.Error) {
 		fmt.Print("Whoa we can divide by 0 with new value: ", quotient, "\n")
 	}
 
-	work.Op = tutorial.SUBTRACT
+	work.Op = tutorial.Operation_SUBTRACT
 	work.Num1 = 15
 	work.Num2 = 10
 	diff, ouch, err := client.Calculate(1, work)
 	if err != nil {
-		fmt.Print("Error during operation: ", err.String(), "\n")
+		fmt.Print("Error during operation: ", err.Error(), "\n")
 		return err
 	} else if ouch != nil {
 		fmt.Print("Invalid operation: ", ouch.String(), "\n")
@@ -63,7 +61,7 @@ func Perform(client *tutorial.CalculatorClient) (err os.Error) {
 
 	log, err := client.GetStruct(1)
 	if err != nil {
-		fmt.Print("Unable to get struct: ", err.String(), "\n")
+		fmt.Print("Unable to get struct: ", err.Error(), "\n")
 		return err
 	} else {
 		fmt.Print("Check log: ", log.Value, "\n")
@@ -71,19 +69,19 @@ func Perform(client *tutorial.CalculatorClient) (err os.Error) {
 	return err
 }
 
-func RunClient(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory) os.Error {
+func runClient(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory) error {
 	addr, err := net.ResolveTCPAddr("tcp", "localhost:9090")
 	if err != nil {
-		fmt.Print("Error resolving address: ", err.String(), "\n")
+		fmt.Print("Error resolving address: ", err.Error(), "\n")
 		return err
 	}
-	transport := thrift.NewTSocketAddr(addr)
+	var transport thrift.TTransport
+	transport = thrift.NewTSocketAddr(addr)
 	if err = transport.Open(); err != nil {
-		fmt.Print("Error opening connection for protocol ", addr.Network(), " to ", addr.String(), ": ", err.String(), "\n")
+		fmt.Print("Error opening connection for protocol ", addr.Network(), " to ", addr.String(), ": ", err.Error(), "\n")
 		return err
 	}
-	useTransport := transportFactory.GetTransport(transport)
-	client := tutorial.NewCalculatorClientFactory(useTransport, protocolFactory)
-	Perform(client)
-	return transport.Close()
+	transport = transportFactory.GetTransport(transport)
+	defer transport.Close()
+	return handleClient(tutorial.NewCalculatorClientFactory(transport, protocolFactory))
 }

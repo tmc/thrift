@@ -22,8 +22,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"git.apache.org/thrift/lib/go/thrift"
 	"os"
-	"thrift"
 )
 
 func Usage() {
@@ -74,9 +74,9 @@ func main() {
 	}
 
 	if client {
-		RunClient(transportFactory, protocolFactory)
+		runClient(transportFactory, protocolFactory)
 	} else if server {
-		RunServer(transportFactory, protocolFactory)
+		runServer(transportFactory, protocolFactory)
 	} else {
 		flag.Usage()
 	}
