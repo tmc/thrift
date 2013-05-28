@@ -21,7 +21,6 @@ package thrift
 
 import (
 	"net"
-	"os"
 )
 
 type TServerSocket struct {

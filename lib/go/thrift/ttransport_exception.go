@@ -19,9 +19,7 @@
 
 package thrift
 
-import (
-	"os"
-)
+import "io"
 
 /**
  * Transport exceptions.
@@ -77,8 +75,8 @@ func NewTTransportExceptionFromOsError(e error) TTransportException {
 	if ok {
 		return t
 	}
-	if e == os.EOF {
-		return NewTTransportException(END_OF_FILE, e.String())
+	if e == io.EOF {
+		return NewTTransportException(END_OF_FILE, e.Error())
 	}
-	return NewTTransportExceptionDefaultString(e.String())
+	return NewTTransportExceptionDefaultString(e.Error())
 }

@@ -21,7 +21,6 @@ package thrift
 
 import (
 	"net"
-	"os"
 )
 
 /**
@@ -109,8 +108,8 @@ func (p *TNonblockingSocket) Open() error {
 
 	var err error
 	if p.conn, err = net.Dial(p.addr.Network(), p.addr.String()); err != nil {
-		LOGGER.Print("Could not open socket", err.String())
-		return NewTTransportException(NOT_OPEN, err.String())
+		LOGGER.Print("Could not open socket", err.Error())
+		return NewTTransportException(NOT_OPEN, err.Error())
 	}
 	if p.conn != nil {
 		p.conn.SetTimeout(p.nsecTimeout)
@@ -174,7 +173,7 @@ func (p *TNonblockingSocket) Peek() bool {
 func (p *TNonblockingSocket) Close() error {
 	if p.conn != nil {
 		if err := p.conn.Close(); err != nil {
-			LOGGER.Print("Could not close socket.", err.String())
+			LOGGER.Print("Could not close socket.", err.Error())
 			return err
 		}
 		p.conn = nil

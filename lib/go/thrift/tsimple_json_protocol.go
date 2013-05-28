@@ -22,13 +22,11 @@ package thrift
 import (
 	"bufio"
 	"bytes"
-	"container/vector"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
-	"json"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -77,11 +75,11 @@ type TSimpleJSONProtocol struct {
 	/**
 	 * Stack of nested contexts that we may be in.
 	 */
-	parseContextStack vector.IntVector
+	parseContextStack []int
 	/**
 	 * Stack of nested contexts that we may be in.
 	 */
-	dumpContext vector.IntVector
+	dumpContext []int
 
 	/**
 	 * Current context that we are in
@@ -381,7 +379,7 @@ func (p *TSimpleJSONProtocol) ReadFieldBegin() (string, TType, int16, TProtocolE
 		}
 		return "", STOP, 0, NewTProtocolException(INVALID_DATA, fmt.Sprint("Expected \"}\" or '\"', but found: '", string(b), "'"))
 	}
-	return "", STOP, 0, NewTProtocolExceptionFromOsError(os.EOF)
+	return "", STOP, 0, NewTProtocolExceptionFromOsError(io.EOF)
 }
 
 func (p *TSimpleJSONProtocol) ReadFieldEnd() TProtocolException {
@@ -640,7 +638,7 @@ func (p *TSimpleJSONProtocol) OutputF64(value float64) TProtocolException {
 	} else if math.IsInf(value, -1) {
 		v = string(JSON_QUOTE) + JSON_NEGATIVE_INFINITY + string(JSON_QUOTE)
 	} else {
-		v = strconv.Ftoa64(value, 'g', -1)
+		v = strconv.FormatFloat(value, 'g', -1, 64)
 		switch _ParseContext(p.dumpContext.Last()) {
 		case _CONTEXT_IN_OBJECT_FIRST, _CONTEXT_IN_OBJECT_NEXT_KEY:
 			v = string(JSON_QUOTE) + v + string(JSON_QUOTE)
@@ -657,7 +655,7 @@ func (p *TSimpleJSONProtocol) OutputI64(value int64) TProtocolException {
 	if e := p.OutputPreValue(); e != nil {
 		return e
 	}
-	v := strconv.Itoa64(value)
+	v := strconv.FormatInt(value, 10)
 	switch _ParseContext(p.dumpContext.Last()) {
 	case _CONTEXT_IN_OBJECT_FIRST, _CONTEXT_IN_OBJECT_NEXT_KEY:
 		v = JsonQuote(v)
@@ -680,7 +678,7 @@ func (p *TSimpleJSONProtocol) OutputString(s string) TProtocolException {
 }
 
 func (p *TSimpleJSONProtocol) OutputStringData(s string) TProtocolException {
-	_, e := io.Copyn(p.writer, strings.NewReader(s), int64(len(s)))
+	_, e := io.CopyN(p.writer, strings.NewReader(s), int64(len(s)))
 	return NewTProtocolExceptionFromOsError(e)
 }
 
@@ -861,7 +859,7 @@ func (p *TSimpleJSONProtocol) ParseStringBody() (string, TProtocolException) {
 		}
 		return v, nil
 	}
-	s, err := p.ParseQuotedStringBody()
+	s, err := p.ParseQuote.ErrorBody()
 	if err != nil {
 		return "", NewTProtocolExceptionFromOsError(err)
 	}
@@ -873,7 +871,7 @@ func (p *TSimpleJSONProtocol) ParseStringBody() (string, TProtocolException) {
 	return v, nil
 }
 
-func (p *TSimpleJSONProtocol) ParseQuotedStringBody() (string, TProtocolException) {
+func (p *TSimpleJSONProtocol) ParseQuoteStringBody() (string, TProtocolException) {
 	line, err := p.reader.ReadString(JSON_QUOTE)
 	if err != nil {
 		return "", NewTProtocolExceptionFromOsError(err)
@@ -889,7 +887,7 @@ func (p *TSimpleJSONProtocol) ParseQuotedStringBody() (string, TProtocolExceptio
 	if i&0x01 == 1 {
 		return line, nil
 	}
-	s, err := p.ParseQuotedStringBody()
+	s, err := p.ParseQuote.ErrorBody()
 	if err != nil {
 		return "", NewTProtocolExceptionFromOsError(err)
 	}
@@ -1174,7 +1172,7 @@ func (p *TSimpleJSONProtocol) readNumeric() (Numeric, TProtocolException) {
 	for continueFor {
 		c, err := p.reader.ReadByte()
 		if err != nil {
-			if err == os.EOF {
+			if err == io.EOF {
 				break
 			}
 			return NUMERIC_NULL, NewTProtocolExceptionFromOsError(err)

@@ -19,8 +19,6 @@
 
 package thrift
 
-import "os"
-
 /**
  * Server transport. Object which provides client transports.
  *

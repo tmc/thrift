@@ -21,7 +21,6 @@ package thrift
 
 import (
 	"container/list"
-	"container/vector"
 	"strconv"
 )
 
@@ -484,7 +483,7 @@ func TypeFromValue(data interface{}) TType {
 		return MAP
 	case TSet:
 		return SET
-	case []interface{}, *list.List, *vector.Vector, TList:
+	case []interface{}, *list.List, TList:
 		return LIST
 	}
 	return STOP
@@ -684,7 +683,7 @@ func (p TType) CoerceData(data interface{}) (interface{}, bool) {
 			data = b.String()
 		}
 		if b, ok := data.(string); ok {
-			d1, err := strconv.Atof64(b)
+			d1, err := strconv.ParseFloat(b, 64)
 			if err != nil {
 				return d1, true
 			}
@@ -861,7 +860,7 @@ func (p TType) CoerceData(data interface{}) (interface{}, bool) {
 			data = b.String()
 		}
 		if b, ok := data.(string); ok {
-			i1, err := strconv.Atoi64(b)
+			i1, err := strconv.ParseInt(b, 10, 64)
 			if err != nil {
 				return i1, true
 			}
@@ -920,10 +919,10 @@ func (p TType) CoerceData(data interface{}) (interface{}, bool) {
 			return string(b), true
 		}
 		if b, ok := data.(float32); ok {
-			return strconv.Ftoa32(b, 'g', -1), true
+			return strconv.FormatFloat(float64(b), 'g', -1, 32), true
 		}
 		if b, ok := data.(float64); ok {
-			return strconv.Ftoa64(b, 'g', -1), true
+			return strconv.FormatFloat(b, 'g', -1, 64), true
 		}
 		return "", false
 	case STRUCT:

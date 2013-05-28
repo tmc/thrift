@@ -22,7 +22,6 @@ package thrift
 import (
 	"bufio"
 	"io"
-	"os"
 )
 
 /**
@@ -206,7 +205,7 @@ func (p *TIOStreamTransport) Write(buf []byte) (int, error) {
 	}
 	n, err := p.Writer.Write(buf)
 	if n == 0 || err != nil {
-		LOGGER.Print("Error writing to iostream, only wrote ", n, " bytes: ", err.String(), "\n")
+		LOGGER.Print("Error writing to iostream, only wrote ", n, " bytes: ", err, "\n")
 	}
 	return n, NewTTransportExceptionFromOsError(err)
 }

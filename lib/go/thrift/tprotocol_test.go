@@ -22,10 +22,10 @@ package thrift_test
 import (
 	"bytes"
 	"fmt"
-	"http"
 	"io/ioutil"
 	"math"
 	"net"
+	"net/http"
 	"os"
 	"testing"
 	. "thrift"
@@ -461,7 +461,7 @@ func ReadWriteBinary(t *testing.T, p TProtocol, trans TTransport) {
 	p.Flush()
 	value, err := p.ReadBinary()
 	if err != nil {
-		t.Errorf("%s: %T %T Unable to read binary: %s", "ReadWriteBinary", p, trans, err.String())
+		t.Errorf("%s: %T %T Unable to read binary: %s", "ReadWriteBinary", p, trans, err.Error())
 	}
 	if len(v) != len(value) {
 		t.Errorf("%s: %T %T len(v) != len(value)... %d != %d", "ReadWriteBinary", p, trans, len(v), len(value))
@@ -483,12 +483,12 @@ func ReadWriteWork(t *testing.T, p TProtocol, trans TTransport) {
 	orig.Comment = "Add: 25 + 102"
 	return
 	if e := orig.Write(p); e != nil {
-		t.Fatalf("Unable to write %s value %#v due to error: %s", thetype, orig, e.String())
+		t.Fatalf("Unable to write %s value %#v due to error: %s", thetype, orig, e.Error())
 	}
 	read := NewWork()
 	e := read.Read(p)
 	if e != nil {
-		t.Fatalf("Unable to read %s due to error: %s", thetype, e.String())
+		t.Fatalf("Unable to read %s due to error: %s", thetype, e.Error())
 	}
 	if !orig.Equals(read) {
 		t.Fatalf("Original Write != Read: %#v != %#v ", orig, read)
@@ -510,7 +510,7 @@ func ReadWriteCalculate(t *testing.T, p TProtocol, trans TTransport) {
 	args31.W = w
 	p.WriteMessageBegin(messageName, CALL, seqId)
 	if err := args31.Write(p); err != nil {
-		t.Fatalf("%s: %T %T Unable to write message: %s", messageName, p, trans, err.String())
+		t.Fatalf("%s: %T %T Unable to write message: %s", messageName, p, trans, err.Error())
 	}
 	p.WriteMessageEnd()
 	p.Transport().Flush()

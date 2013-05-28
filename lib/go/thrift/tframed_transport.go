@@ -22,7 +22,6 @@ package thrift
 import (
 	"bytes"
 	"encoding/binary"
-	"os"
 )
 
 type TFramedTransport struct {
@@ -100,7 +99,7 @@ func (p *TFramedTransport) Flush() error {
 	if size > 0 {
 		n, err := p.writeBuffer.WriteTo(p.transport)
 		if err != nil {
-			print("Error while flushing write buffer of size ", size, " to transport, only wrote ", n, " bytes: ", err.String(), "\n")
+			print("Error while flushing write buffer of size ", size, " to transport, only wrote ", n, " bytes: ", err, "\n")
 			return NewTTransportExceptionFromOsError(err)
 		}
 	}

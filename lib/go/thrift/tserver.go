@@ -19,9 +19,6 @@
 
 package thrift
 
-import (
-	"os"
-)
 
 type TServer interface {
 	/**

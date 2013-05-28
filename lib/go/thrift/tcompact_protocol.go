@@ -20,11 +20,9 @@
 package thrift
 
 import (
-	"container/vector"
 	"encoding/binary"
 	"fmt"
 	"math"
-	"os"
 	"strings"
 )
 
@@ -92,7 +90,7 @@ type TCompactProtocol struct {
 	 * Used to keep track of the last field for the current and previous structs,
 	 * so we can do the delta stuff.
 	 */
-	lastField   *vector.IntVector
+	lastField   []int
 	lastFieldId int
 
 	/**
@@ -115,7 +113,7 @@ type TCompactProtocol struct {
  * @param transport the TTransport object to read from or write to.
  */
 func NewTCompactProtocol(trans TTransport) *TCompactProtocol {
-	return &TCompactProtocol{trans: trans, lastField: &vector.IntVector{}}
+	return &TCompactProtocol{trans: trans, lastField: []int{}}
 }
 
 //
@@ -152,7 +150,7 @@ func (p *TCompactProtocol) WriteMessageEnd() TProtocolException { return nil }
  * stack so we can get the field id deltas correct.
  */
 func (p *TCompactProtocol) WriteStructBegin(name string) TProtocolException {
-	p.lastField.Push(p.lastFieldId)
+	p.lastField = append(p.lastField, p.lastFieldId)
 	p.lastFieldId = 0
 	return nil
 }
@@ -163,7 +161,7 @@ func (p *TCompactProtocol) WriteStructBegin(name string) TProtocolException {
  * of the field stack.
  */
 func (p *TCompactProtocol) WriteStructEnd() TProtocolException {
-	p.lastFieldId = p.lastField.Pop()
+	p.lastFieldId, p.lastField = p.lastField[len(p.lastField)-1], p.lastField[:len(p.lastField)-1]
 	return nil
 }
 
@@ -383,7 +381,7 @@ func (p *TCompactProtocol) ReadMessageEnd() TProtocolException { return nil }
  * opportunity to push a new struct begin marker onto the field stack.
  */
 func (p *TCompactProtocol) ReadStructBegin() (name string, err TProtocolException) {
-	p.lastField.Push(p.lastFieldId)
+	p.lastField = append(p.lastField, p.lastFieldId)
 	p.lastFieldId = 0
 	return
 }
@@ -394,7 +392,7 @@ func (p *TCompactProtocol) ReadStructBegin() (name string, err TProtocolExceptio
  */
 func (p *TCompactProtocol) ReadStructEnd() TProtocolException {
 	// consume the last field we read off the wire.
-	p.lastFieldId = p.lastField.Pop()
+	p.lastFieldId, p.lastField = p.lastField[len(p.lastField)-1], p.lastField[:len(p.lastField)-1]
 	return nil
 }
 

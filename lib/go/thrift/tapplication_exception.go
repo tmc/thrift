@@ -19,10 +19,6 @@
 
 package thrift
 
-import (
-	"os"
-)
-
 const (
 	UNKNOWN_APPLICATION_EXCEPTION  = 0
 	UNKNOWN_METHOD                 = 1
@@ -85,7 +81,7 @@ func (p *tApplicationException) Read(iprot TProtocol) (error TApplicationExcepti
 	for {
 		_, ttype, id, err := iprot.ReadFieldBegin()
 		if err != nil {
-			return
+			return nil, err
 		}
 		if ttype == STOP {
 			break
@@ -95,12 +91,12 @@ func (p *tApplicationException) Read(iprot TProtocol) (error TApplicationExcepti
 			if ttype == STRING {
 				message, err = iprot.ReadString()
 				if err != nil {
-					return
+					return nil, err
 				}
 			} else {
 				err = SkipDefaultDepth(iprot, ttype)
 				if err != nil {
-					return
+					return nil, err
 				}
 			}
 			break
@@ -108,30 +104,30 @@ func (p *tApplicationException) Read(iprot TProtocol) (error TApplicationExcepti
 			if ttype == I32 {
 				type_, err = iprot.ReadI32()
 				if err != nil {
-					return
+					return nil, err
 				}
 			} else {
 				err = SkipDefaultDepth(iprot, ttype)
 				if err != nil {
-					return
+					return nil, err
 				}
 			}
 			break
 		default:
 			err = SkipDefaultDepth(iprot, ttype)
 			if err != nil {
-				return
+				return nil, err
 			}
 			break
 		}
 		err = iprot.ReadFieldEnd()
 		if err != nil {
-			return
+			return nil, err
 		}
 	}
 	err = iprot.ReadStructEnd()
 	error = NewTApplicationException(type_, message)
-	return
+	return error, err
 }
 
 func (p *tApplicationException) Write(oprot TProtocol) (err error) {

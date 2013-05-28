@@ -22,7 +22,6 @@ package thrift
 import (
 	"bytes"
 	"io"
-	"os"
 )
 
 /**

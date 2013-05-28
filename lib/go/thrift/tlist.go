@@ -19,10 +19,6 @@
 
 package thrift
 
-import (
-	"container/vector"
-)
-
 /**
  * Helper class that encapsulates list metadata.
  *
@@ -43,17 +39,15 @@ type TList interface {
 
 type tList struct {
 	elemType TType
-	l        *vector.Vector
+	l        []interface{}
 }
 
 func NewTList(t TType, s int) TList {
-	var v vector.Vector
-	return &tList{elemType: t, l: v.Resize(s, s)}
+	return &tList{elemType: t, l: make([]interface{}, 0, s)}
 }
 
 func NewTListDefault() TList {
-	var v vector.Vector
-	return &tList{elemType: TType(STOP), l: &v}
+	return &tList{elemType: TType(STOP), l: []interface{}{}}
 }
 
 func (p *tList) ElemType() TType {
@@ -61,11 +55,11 @@ func (p *tList) ElemType() TType {
 }
 
 func (p *tList) Len() int {
-	return p.l.Len()
+	return len(p.l)
 }
 
 func (p *tList) At(i int) interface{} {
-	return p.l.At(i)
+	return p.l[i]
 }
 
 func (p *tList) Set(i int, data interface{}) {
@@ -73,7 +67,7 @@ func (p *tList) Set(i int, data interface{}) {
 		p.elemType = TypeFromValue(data)
 	}
 	if data, ok := p.elemType.CoerceData(data); ok {
-		p.l.Set(i, data)
+		p.l[i] = data
 	}
 }
 
@@ -83,24 +77,26 @@ func (p *tList) Push(data interface{}) {
 	}
 	data, ok := p.elemType.CoerceData(data)
 	if ok {
-		p.l.Push(data)
+		p.l = append(p.l)
 	}
 }
 
 func (p *tList) Pop() interface{} {
-	return p.l.Pop()
+	var r interface{}
+	r, p.l = p.l[len(p.l)-1], p.l[:len(p.l)-1]
+	return r
 }
 
 func (p *tList) Swap(i, j int) {
-	p.l.Swap(i, j)
+	p.l[i] = p.l[j]
 }
 
 func (p *tList) Insert(i int, data interface{}) {
-	p.l.Insert(i, data)
+	p.l[i] = data
 }
 
 func (p *tList) Delete(i int) {
-	p.l.Delete(i)
+	p.l = append(p.l[:i], p.l[i+1:]...)
 }
 
 func (p *tList) Contains(data interface{}) bool {
@@ -108,7 +104,7 @@ func (p *tList) Contains(data interface{}) bool {
 }
 
 func (p *tList) Less(i, j int) bool {
-	return p.l.Less(i, j)
+	return true
 }
 
 func (p *tList) Iter() <-chan interface{} {
@@ -118,7 +114,7 @@ func (p *tList) Iter() <-chan interface{} {
 }
 
 func (p *tList) iterate(c chan<- interface{}) {
-	for _, elem := range *p.l {
+	for _, elem := range p.l {
 		c <- elem
 	}
 	close(c)
@@ -126,9 +122,9 @@ func (p *tList) iterate(c chan<- interface{}) {
 
 func (p *tList) indexOf(data interface{}) int {
 	if data == nil {
-		size := p.l.Len()
+		size := len(p.l)
 		for i := 0; i < size; i++ {
-			if p.l.At(i) == nil {
+			if p.l[i] == nil {
 				return i
 			}
 		}
@@ -138,10 +134,10 @@ func (p *tList) indexOf(data interface{}) int {
 	if data == nil || !ok {
 		return -1
 	}
-	size := p.l.Len()
+	size := len(p.l)
 	if p.elemType.IsBaseType() || p.elemType.IsEnum() {
 		for i := 0; i < size; i++ {
-			if data == p.l.At(i) {
+			if data == p.l[i] {
 				return i
 			}
 		}
@@ -149,7 +145,7 @@ func (p *tList) indexOf(data interface{}) int {
 	}
 	if cmp, ok := data.(EqualsOtherInterface); ok {
 		for i := 0; i < size; i++ {
-			if cmp.Equals(p.l.At(i)) {
+			if cmp.Equals(p.l[i]) {
 				return i
 			}
 		}
@@ -159,7 +155,7 @@ func (p *tList) indexOf(data interface{}) int {
 	case MAP:
 		if cmp, ok := data.(EqualsMap); ok {
 			for i := 0; i < size; i++ {
-				v := p.l.At(i)
+				v := p.l[i]
 				if v == nil {
 					continue
 				}
@@ -172,7 +168,7 @@ func (p *tList) indexOf(data interface{}) int {
 	case SET:
 		if cmp, ok := data.(EqualsSet); ok {
 			for i := 0; i < size; i++ {
-				v := p.l.At(i)
+				v := p.l[i]
 				if v == nil {
 					continue
 				}
@@ -185,7 +181,7 @@ func (p *tList) indexOf(data interface{}) int {
 	case LIST:
 		if cmp, ok := data.(EqualsList); ok {
 			for i := 0; i < size; i++ {
-				v := p.l.At(i)
+				v := p.l[i]
 				if v == nil {
 					continue
 				}
@@ -198,7 +194,7 @@ func (p *tList) indexOf(data interface{}) int {
 	case STRUCT:
 		if cmp, ok := data.(EqualsStruct); ok {
 			for i := 0; i < size; i++ {
-				v := p.l.At(i)
+				v := p.l[i]
 				if v == nil {
 					continue
 				}

@@ -21,10 +21,9 @@ package thrift
 
 import (
 	"bytes"
-	"http"
-	"os"
+	"net/http"
+	"net/url"
 	"strconv"
-	"url"
 )
 
 type THttpClient struct {

@@ -19,10 +19,6 @@
 
 package thrift
 
-import (
-	"os"
-)
-
 /**
  * A nonblocking TServer implementation. This allows for fairness amongst all
  * connected clients in terms of invocations.

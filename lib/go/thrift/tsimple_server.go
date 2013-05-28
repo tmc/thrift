@@ -19,10 +19,6 @@
 
 package thrift
 
-import (
-	"os"
-)
-
 /**
  * Simple singlethreaded server for testing.
  *

@@ -19,10 +19,6 @@
 
 package thrift
 
-import (
-	"os"
-)
-
 /**
  * Generic exception class for Thrift.
  *
@@ -30,6 +26,7 @@ import (
 
 type TException interface {
 	String() string
+	Error() string
 }
 
 type tException struct {
@@ -37,6 +34,10 @@ type tException struct {
 }
 
 func (p *tException) String() string {
+	return p.message
+}
+
+func (p *tException) Error() string {
 	return p.message
 }
 
@@ -52,5 +53,5 @@ func NewTExceptionFromOsError(e error) TException {
 	if ok {
 		return t
 	}
-	return NewTException(e.String())
+	return NewTException(e.Error())
 }
