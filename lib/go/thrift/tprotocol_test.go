@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package thrift_test
+package thrift
 
 import (
 	"bytes"
@@ -26,9 +26,7 @@ import (
 	"math"
 	"net"
 	"net/http"
-	"os"
 	"testing"
-	. "thrift"
 )
 
 const PROTOCOL_BINARY_DATA_SIZE = 155
@@ -517,7 +515,7 @@ func ReadWriteCalculate(t *testing.T, p TProtocol, trans TTransport) {
 
 	name, ttype, seqid, err1 := p.ReadMessageBegin()
 	if err1 != nil {
-		t.Fatalf("%s: %T %T Unable to read message begin: %s", messageName, p, trans, err1.String())
+		t.Fatalf("%s: %T %T Unable to read message begin: %s", messageName, p, trans, err1.Error())
 	}
 	if name != messageName {
 		t.Errorf("%s: %T %T Expected message named \"%s\", but was: \"%s\"", messageName, p, trans, messageName, name)
@@ -536,11 +534,11 @@ func ReadWriteCalculate(t *testing.T, p TProtocol, trans TTransport) {
 		t.Errorf("%s: %T %T Calculate args not as expected, %T vs %T, cmp: %#v, ok: %#v, equals: %#v", messageName, p, trans, args31, calcArgs, cmp2, ok, args31.Equals(calcArgs))
 	}
 	if err2 != nil {
-		t.Fatalf("%s: %T %T Unable to read message end: %s", messageName, p, trans, err2.String())
+		t.Fatalf("%s: %T %T Unable to read message end: %s", messageName, p, trans, err2.Error())
 	}
 	err3 := p.ReadMessageEnd()
 	if err3 != nil {
-		t.Fatalf("%s: %T %T Unable to read message end: %s", messageName, p, trans, err3.String())
+		t.Fatalf("%s: %T %T Unable to read message end: %s", messageName, p, trans, err3.Error())
 	}
 }
 
@@ -1057,14 +1055,16 @@ func (p *CalculatorClient) RecvCalculate() (value int32, ouch *InvalidOperation,
 		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
 		p.InputProtocol = iprot
 	}
-	_, mTypeId, _, err := iprot.ReadMessageBegin()
-	if err != nil {
+	_, mTypeId, _, er := iprot.ReadMessageBegin()
+	if er != nil {
+		err = er
 		return
 	}
 	if mTypeId == EXCEPTION {
 		error33 := NewTApplicationExceptionDefault()
-		error34, err := error33.Read(iprot)
-		if err != nil {
+		error34, er := error33.Read(iprot)
+		if er != nil {
+			err = er
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {

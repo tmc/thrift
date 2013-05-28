@@ -54,6 +54,10 @@ func (p *tProtocolException) String() string {
 	return p.message
 }
 
+func (p *tProtocolException) Error() string {
+	return p.message
+}
+
 func NewTProtocolExceptionDefault() TProtocolException {
 	return NewTProtocolExceptionDefaultType(UNKNOWN_PROTOCOL_EXCEPTION)
 }

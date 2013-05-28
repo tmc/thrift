@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package thrift_test
+package thrift
 
 import (
 	"encoding/base64"
@@ -26,7 +26,6 @@ import (
 	"math"
 	"strconv"
 	"testing"
-	. "thrift"
 )
 
 func TestWriteJSONProtocolBool(t *testing.T) {
@@ -407,9 +406,9 @@ func TestWriteJSONProtocolBinary(t *testing.T) {
 		t.Fatalf("Unable to write %s value %v due to error flushing: %s", thetype, value, e.Error())
 	}
 	s := trans.String()
-	expecte.Error := fmt.Sprint("\"", b64String, "\"")
-	if s != expecte.Error {
-		t.Fatalf("Bad value for %s %v\n  wrote:  \"%v\"\nexpected: \"%v\"", thetype, value, s, expecte.Error)
+	expectedString := fmt.Sprint("\"", b64String, "\"")
+	if s != expectedString {
+		t.Fatalf("Bad value for %s %v\n  wrote:  \"%v\"\nexpected: \"%v\"", thetype, value, s, expectedString)
 	}
 	v1, err := p.ReadBinary()
 	if err != nil {
@@ -653,9 +652,9 @@ func TestReadWriteJSONStruct(t *testing.T) {
 	}
 	p.Flush()
 	t.Log("Memory buffer contents: ", trans.String())
-	expecte.Error := "{\"1\":{\"i32\":25},\"2\":{\"i32\":102},\"3\":{\"i32\":1},\"4\":{\"str\":\"Add: 25 + 102\"}}"
-	if expecte.Error != trans.String() {
-		t.Fatalf("Expected JSON Struct with value %#v but have %#v", expecte.Error, trans.String())
+	expectedString := "{\"1\":{\"i32\":25},\"2\":{\"i32\":102},\"3\":{\"i32\":1},\"4\":{\"str\":\"Add: 25 + 102\"}}"
+	if expectedString != trans.String() {
+		t.Fatalf("Expected JSON Struct with value %#v but have %#v", expectedString, trans.String())
 	}
 	read := NewWork()
 	e := read.Read(p)

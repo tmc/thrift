@@ -17,21 +17,20 @@
  * under the License.
  */
 
-package thrift_test
+package thrift
 
 import (
 	"io"
 	"testing"
-	. "thrift"
 )
 
 func TestTException(t *testing.T) {
 	exc := NewTException("")
-	if exc.String() != "" {
-		t.Fatalf("Expected empty string for exception but found '%s'", exc.String())
+	if exc.Error() != "" {
+		t.Fatalf("Expected empty string for exception but found '%s'", exc.Error())
 	}
 	exc = NewTExceptionFromOsError(io.EOF)
-	if exc.String() != io.EOF.String() {
-		t.Fatalf("Expected '%s', but found '%s'", io.EOF.String(), exc.String())
+	if exc.Error() != io.EOF.Error() {
+		t.Fatalf("Expected '%s', but found '%s'", io.EOF.Error(), exc.Error())
 	}
 }

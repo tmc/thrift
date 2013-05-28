@@ -19,9 +19,14 @@
 
 package thrift
 
+import (
+	"bytes"
+)
+
 /**
  * Helper class that encapsulates list metadata.
  *
+ * Note that lists of structs requires pointers, not struct values.
  */
 type TList interface {
 	TContainer
@@ -43,11 +48,13 @@ type tList struct {
 }
 
 func NewTList(t TType, s int) TList {
-	return &tList{elemType: t, l: make([]interface{}, 0, s)}
+	//this automatically grows using append so 0
+	v := make([]interface{}, 0)
+	return &tList{elemType: t, l: v}
 }
 
 func NewTListDefault() TList {
-	return &tList{elemType: TType(STOP), l: []interface{}{}}
+	return &tList{elemType: TType(STOP), l: make([]interface{}, 0)}
 }
 
 func (p *tList) ElemType() TType {
@@ -67,7 +74,11 @@ func (p *tList) Set(i int, data interface{}) {
 		p.elemType = TypeFromValue(data)
 	}
 	if data, ok := p.elemType.CoerceData(data); ok {
-		p.l[i] = data
+		if len(p.l) >= i {
+			p.l[i] = data
+		} else {
+			p.l = append(p.l, data)
+		}
 	}
 }
 
@@ -77,22 +88,26 @@ func (p *tList) Push(data interface{}) {
 	}
 	data, ok := p.elemType.CoerceData(data)
 	if ok {
-		p.l = append(p.l)
+		p.l = append(p.l, data)
 	}
 }
 
 func (p *tList) Pop() interface{} {
-	var r interface{}
-	r, p.l = p.l[len(p.l)-1], p.l[:len(p.l)-1]
-	return r
+	var x interface{}
+	x, p.l = p.l[len(p.l)-1], p.l[:len(p.l)-1]
+	return x
 }
 
 func (p *tList) Swap(i, j int) {
-	p.l[i] = p.l[j]
+	x, y := p.l[i], p.l[j]
+	p.l[i] = y
+	p.l[j] = x
 }
 
 func (p *tList) Insert(i int, data interface{}) {
-	p.l[i] = data
+	newl := make([]interface{}, 1)
+	newl[0] = data
+	p.l = append(p.l[:i], append(newl, p.l[i:]...)...)
 }
 
 func (p *tList) Delete(i int) {
@@ -104,7 +119,8 @@ func (p *tList) Contains(data interface{}) bool {
 }
 
 func (p *tList) Less(i, j int) bool {
-	return true
+	_, less := p.elemType.Compare(p.l[i], p.l[j])
+	return less
 }
 
 func (p *tList) Iter() <-chan interface{} {
@@ -135,6 +151,14 @@ func (p *tList) indexOf(data interface{}) int {
 		return -1
 	}
 	size := len(p.l)
+	if p.elemType == BINARY {
+		for i := 0; i < size; i++ {
+			if bytes.Compare(data.([]byte), p.l[i].([]byte)) == 0 {
+				return i
+			}
+		}
+		return -1
+	}
 	if p.elemType.IsBaseType() || p.elemType.IsEnum() {
 		for i := 0; i < size; i++ {
 			if data == p.l[i] {

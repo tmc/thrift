@@ -20,6 +20,7 @@
 package thrift
 
 import (
+	"bytes"
 	"container/list"
 	"reflect"
 )
@@ -208,6 +209,25 @@ func (p *tMap) Get(key interface{}) (interface{}, bool) {
 			return v, true
 		}
 		return nil, false
+	case BINARY:
+		for elem := p.l.Front(); elem != nil; elem = elem.Next() {
+			e := elem.Value.(TMapElem)
+			k := e.Key()
+			if k == nil {
+				continue
+			}
+			binkey, ok := k.([]byte)
+			if ok {
+				if bytes.Compare(binkey, useKey.([]byte)) == 0 {
+					return e.Value(), true
+				}
+				continue
+			}
+			if reflect.DeepEqual(useKey, k) {
+				return e.Value(), true
+			}
+		}
+		return nil, false
 	case STRUCT:
 		for elem := p.l.Front(); elem != nil; elem = elem.Next() {
 			e := elem.Value.(TMapElem)
@@ -306,7 +326,7 @@ func (p *tMap) Set(key, value interface{}) {
 		return
 	}
 	newElem := NewTMapElem(coercedKey, coercedValue)
-	if !p.KeyType().IsBaseType() {
+	if !p.KeyType().IsBaseType() || p.KeyType() == BINARY {
 		for elem := p.l.Front(); elem != nil; elem = elem.Next() {
 			k := elem.Value.(TMapElem).Key()
 			if cmp, ok := p.KeyType().Compare(coercedKey, k); ok && cmp >= 0 {
@@ -372,10 +392,10 @@ func (p *tMap) Set(key, value interface{}) {
 		}
 		b := coercedKey.(string)
 		p.s[b] = value
-	case STRUCT, MAP, SET, LIST:
-		panic("Should never be here")
+	case BINARY, STRUCT, MAP, SET, LIST:
+		panic("Should never be here because type is " + p.KeyType().String())
 	default:
-		panic("Should never be here")
+		panic("Should never be here because type is " + p.KeyType().String())
 	}
 }
 
@@ -452,6 +472,25 @@ func (p *tMap) Contains(key interface{}) bool {
 		}
 		_, ok := m[coercedKey.(string)]
 		return ok
+	case BINARY:
+		for elem := p.l.Front(); elem != nil; elem = elem.Next() {
+			e := elem.Value.(TMapElem)
+			k := e.Key()
+			if k == nil {
+				continue
+			}
+			binkey, ok := k.([]byte)
+			if ok {
+				if bytes.Compare(binkey, coercedKey.([]byte)) == 0 {
+					return true
+				}
+				continue
+			}
+			if reflect.DeepEqual(coercedKey, k) {
+				return true
+			}
+		}
+		return false
 	case STRUCT:
 		for elem := p.l.Front(); elem != nil; elem = elem.Next() {
 			e := elem.Value.(TMapElem)
@@ -565,17 +604,7 @@ func (p *tMap) iterate(c chan<- TMapElem) {
 			c <- NewTMapElem(k, v)
 		}
 		close(c)
-	case STRUCT:
-		for v := p.l.Front(); v != nil; v = v.Next() {
-			c <- v.Value.(TMapElem)
-		}
-		close(c)
-	case LIST:
-		for v := p.l.Front(); v != nil; v = v.Next() {
-			c <- v.Value.(TMapElem)
-		}
-		close(c)
-	case SET:
+	case BINARY, STRUCT, LIST, SET:
 		for v := p.l.Front(); v != nil; v = v.Next() {
 			c <- v.Value.(TMapElem)
 		}
@@ -632,17 +661,7 @@ func (p *tMap) iterateKeys(c chan<- interface{}) {
 			c <- k
 		}
 		close(c)
-	case STRUCT:
-		for v := p.l.Front(); v != nil; v = v.Next() {
-			c <- v.Value.(TMapElem).Key()
-		}
-		close(c)
-	case LIST:
-		for v := p.l.Front(); v != nil; v = v.Next() {
-			c <- v.Value.(TMapElem).Key()
-		}
-		close(c)
-	case SET:
+	case BINARY, STRUCT, LIST, SET:
 		for v := p.l.Front(); v != nil; v = v.Next() {
 			c <- v.Value.(TMapElem).Key()
 		}
@@ -698,17 +717,7 @@ func (p *tMap) iterateValues(c chan<- interface{}) {
 			c <- v
 		}
 		close(c)
-	case STRUCT:
-		for v := p.l.Front(); v != nil; v = v.Next() {
-			c <- v.Value.(TMapElem).Value()
-		}
-		close(c)
-	case LIST:
-		for v := p.l.Front(); v != nil; v = v.Next() {
-			c <- v.Value.(TMapElem).Value()
-		}
-		close(c)
-	case SET:
+	case BINARY, STRUCT, LIST, SET:
 		for v := p.l.Front(); v != nil; v = v.Next() {
 			c <- v.Value.(TMapElem).Value()
 		}

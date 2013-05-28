@@ -19,7 +19,9 @@
 
 package thrift
 
-import "io"
+import (
+	"io"
+)
 
 /**
  * Transport exceptions.
@@ -47,7 +49,7 @@ func (p *tTransportException) TypeId() int {
 	return p.typeId
 }
 
-func (p *tTransportException) String() string {
+func (p *tTransportException) Error() string {
 	return p.message
 }
 

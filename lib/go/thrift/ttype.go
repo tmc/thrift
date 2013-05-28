@@ -20,6 +20,7 @@
 package thrift
 
 import (
+	"bytes"
 	"container/list"
 	"strconv"
 )
@@ -48,8 +49,19 @@ const (
 	ENUM    = 16
 	UTF8    = 16
 	UTF16   = 17
+	BINARY  = 18
 	GENERIC = 127
 )
+
+func (p TType) ThriftTypeId() byte {
+	switch p {
+	default:
+		return byte(p)
+	case BINARY:
+		return byte(STRING)
+	}
+	return byte(0)
+}
 
 func (p TType) String() string {
 	switch p {
@@ -85,13 +97,15 @@ func (p TType) String() string {
 		return "UTF16"
 	case GENERIC:
 		return "GENERIC"
+	case BINARY:
+		return "BINARY"
 	}
 	return "Unknown"
 }
 
 func (p TType) IsBaseType() bool {
 	switch p {
-	case BOOL, BYTE, DOUBLE, I16, I32, I64, STRING, UTF8, UTF16:
+	case BOOL, BYTE, DOUBLE, I16, I32, I64, STRING, UTF8, UTF16, BINARY:
 		return true
 	default:
 		return false
@@ -131,7 +145,7 @@ func (p TType) IsNumericType() bool {
 
 func (p TType) IsStringType() bool {
 	switch p {
-	case STRING, UTF8, UTF16:
+	case STRING, UTF8, UTF16, BINARY:
 		return true
 	default:
 		return false
@@ -244,8 +258,10 @@ func (p TType) Less(i, j interface{}) bool {
 }
 
 func (p TType) Compare(i, j interface{}) (int, bool) {
-	if i == j {
-		return 0, true
+	if p != BINARY {
+		if i == j {
+			return 0, true
+		}
 	}
 	if i == nil {
 		if j == nil {
@@ -268,8 +284,10 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 	if !iok && !jok {
 		return 0, false
 	}
-	if ci == cj {
-		return 0, true
+	if p != BINARY {
+		if ci == cj {
+			return 0, true
+		}
 	}
 	if ci == nil {
 		if cj == nil {
@@ -285,8 +303,11 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		// hopefully this doesn't happen as Compare() would continuously return 0, false
 		return 0, false
 	case BOOL:
-		vi := ci.(bool)
-		vj := cj.(bool)
+		vi, iok := ci.(bool)
+		vj, jok := cj.(bool)
+		if !iok || !jok {
+			return 0, false
+		}
 		if vi == vj {
 			return 0, true
 		}
@@ -295,8 +316,11 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		}
 		return 1, true
 	case BYTE:
-		vi := ci.(byte)
-		vj := cj.(byte)
+		vi, iok := ci.(byte)
+		vj, jok := cj.(byte)
+		if !iok || !jok {
+			return 0, false
+		}
 		if vi == vj {
 			return 0, true
 		}
@@ -305,8 +329,11 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		}
 		return 1, true
 	case DOUBLE:
-		vi := ci.(float64)
-		vj := cj.(float64)
+		vi, iok := ci.(float64)
+		vj, jok := cj.(float64)
+		if !iok || !jok {
+			return 0, false
+		}
 		if vi == vj {
 			return 0, true
 		}
@@ -315,8 +342,11 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		}
 		return 1, true
 	case I16:
-		vi := ci.(int16)
-		vj := cj.(int16)
+		vi, iok := ci.(int16)
+		vj, jok := cj.(int16)
+		if !iok || !jok {
+			return 0, false
+		}
 		if vi == vj {
 			return 0, true
 		}
@@ -325,8 +355,11 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		}
 		return 1, true
 	case I32:
-		vi := ci.(int32)
-		vj := cj.(int32)
+		vi, iok := ci.(int32)
+		vj, jok := cj.(int32)
+		if !iok || !jok {
+			return 0, false
+		}
 		if vi == vj {
 			return 0, true
 		}
@@ -335,8 +368,11 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		}
 		return 1, true
 	case I64:
-		vi := ci.(int64)
-		vj := cj.(int64)
+		vi, iok := ci.(int64)
+		vj, jok := cj.(int64)
+		if !iok || !jok {
+			return 0, false
+		}
 		if vi == vj {
 			return 0, true
 		}
@@ -345,8 +381,11 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		}
 		return 1, true
 	case STRING, UTF8, UTF16:
-		vi := ci.(string)
-		vj := cj.(string)
+		vi, iok := ci.(string)
+		vj, jok := cj.(string)
+		if !iok || !jok {
+			return 0, false
+		}
 		if vi == vj {
 			return 0, true
 		}
@@ -354,9 +393,19 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 			return -1, true
 		}
 		return 1, true
+	case BINARY:
+		vi, iok := ci.([]byte)
+		vj, jok := cj.([]byte)
+		if !iok || !jok {
+			return 0, false
+		}
+		return bytes.Compare(vi, vj), true
 	case STRUCT:
-		si := ci.(TStruct)
-		sj := cj.(TStruct)
+		si, iok := ci.(TStruct)
+		sj, jok := cj.(TStruct)
+		if !iok || !jok {
+			return 0, false
+		}
 		if cmp := CompareString(si.ThriftName(), sj.ThriftName()); cmp != 0 {
 			return cmp, true
 		}
@@ -372,22 +421,32 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		}
 		return 0, true
 	case MAP:
-		mi := ci.(TMap)
-		mj := cj.(TMap)
-		ei := mi.KeyType()
-		if ej := mj.KeyType(); ei != ej {
-			return CompareInt(int(ei), int(ej)), true
+		mi, iok := ci.(TMap)
+		mj, jok := cj.(TMap)
+		if !iok || !jok {
+			return 0, false
+		}
+		ki := mi.KeyType()
+		if kj := mj.KeyType(); ki != kj {
+			return CompareInt(int(ki), int(kj)), true
+		}
+		vi := mi.ValueType()
+		if vj := mj.ValueType(); vi != vj {
+			return CompareInt(int(vi), int(vj)), true
 		}
 		if size := mi.Len(); size != mj.Len() {
 			return CompareInt(size, mj.Len()), true
 		}
-		if c, cok := ei.Compare(mi.Keys(), mj.Keys()); c != 0 || !cok {
+		if c, cok := ki.CompareValueArrays(mi.Keys(), mj.Keys()); c != 0 || !cok {
 			return c, cok
 		}
-		return ei.Compare(mi.Values(), mj.Values())
+		return vi.CompareValueArrays(mi.Values(), mj.Values())
 	case LIST:
-		li := ci.(TList)
-		lj := cj.(TList)
+		li, iok := ci.(TList)
+		lj, jok := cj.(TList)
+		if !iok || !jok {
+			return 0, false
+		}
 		ei := li.ElemType()
 		ej := lj.ElemType()
 		if ei != ej {
@@ -407,8 +466,11 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		}
 		return 0, true
 	case SET:
-		li := ci.(TSet)
-		lj := cj.(TSet)
+		li, iok := ci.(TSet)
+		lj, jok := cj.(TSet)
+		if !iok || !jok {
+			return 0, false
+		}
 		ei := li.ElemType()
 		ej := lj.ElemType()
 		if ei != ej {
@@ -418,7 +480,7 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		if size != lj.Len() {
 			return CompareInt(size, lj.Len()), true
 		}
-		return ei.Compare(li.Values(), lj.Values())
+		return ei.CompareValueArrays(li.Values(), lj.Values())
 	default:
 		panic("Invalid thrift type to coerce")
 	}
@@ -456,7 +518,7 @@ type Enumer interface {
 }
 
 func TypeFromValue(data interface{}) TType {
-	switch i := data.(type) {
+	switch data.(type) {
 	default:
 		return STOP
 	case nil:
@@ -477,6 +539,8 @@ func TypeFromValue(data interface{}) TType {
 		return I64
 	case string:
 		return STRING
+	case []byte:
+		return BINARY
 	case TStruct:
 		return STRUCT
 	case TMap:
@@ -510,6 +574,8 @@ func (p TType) CoerceData(data interface{}) (interface{}, bool) {
 			return int64(0), true
 		case STRING, UTF8, UTF16:
 			return "", true
+		case BINARY:
+			return nil, true
 		case STRUCT:
 			return NewTStructEmpty(""), true
 		case MAP:
@@ -559,6 +625,8 @@ func (p TType) CoerceData(data interface{}) (interface{}, bool) {
 			return b != 0, true
 		case float64:
 			return b != 0, true
+		case []byte:
+			return len(b) > 1 || (len(b) == 1 && b[0] != 0), true
 		case Stringer:
 			v := b.String()
 			if v == "false" || v == "0" || len(v) == 0 {
@@ -620,6 +688,12 @@ func (p TType) CoerceData(data interface{}) (interface{}, bool) {
 		if b, ok := data.(float64); ok {
 			return byte(int(b)), true
 		}
+		if b, ok := data.([]byte); ok {
+			if len(b) > 0 {
+				return b[0], true
+			}
+			return byte(0), true
+		}
 		if b, ok := data.(Stringer); ok {
 			data = b.String()
 		}
@@ -678,6 +752,12 @@ func (p TType) CoerceData(data interface{}) (interface{}, bool) {
 		}
 		if b, ok := data.(uint64); ok {
 			return float64(b), true
+		}
+		if b, ok := data.([]byte); ok {
+			if len(b) > 0 {
+				return float64(b[0]), true
+			}
+			return float64(0), true
 		}
 		if b, ok := data.(Stringer); ok {
 			data = b.String()
@@ -867,9 +947,12 @@ func (p TType) CoerceData(data interface{}) (interface{}, bool) {
 		}
 		return int64(0), false
 	case STRING, UTF8, UTF16:
+		if b, ok := data.([]byte); ok {
+			return string(b), true
+		}
 		if b, ok := data.(Enumer); ok {
 			if i1, ok := data.(int); ok {
-				return i1, true
+				return string(i1), true
 			}
 			return b.String(), true
 		}
@@ -923,6 +1006,68 @@ func (p TType) CoerceData(data interface{}) (interface{}, bool) {
 		}
 		if b, ok := data.(float64); ok {
 			return strconv.FormatFloat(b, 'g', -1, 64), true
+		}
+		return "", false
+	case BINARY:
+		if b, ok := data.([]byte); ok {
+			return b, true
+		}
+		if b, ok := data.(Enumer); ok {
+			if i1, ok := data.(int); ok {
+				return []byte(string(i1)), true
+			}
+			return []byte(b.String()), true
+		}
+		if b, ok := data.(Stringer); ok {
+			return []byte(b.String()), true
+		}
+		if b, ok := data.(string); ok {
+			return []byte(b), true
+		}
+		if b, ok := data.(int); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(byte); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(bool); ok {
+			if b {
+				return []byte("true"), true
+			}
+			return []byte("false"), true
+		}
+		if b, ok := data.(int8); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(int16); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(int32); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(int64); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(uint); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(uint8); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(uint16); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(uint32); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(uint64); ok {
+			return []byte(string(b)), true
+		}
+		if b, ok := data.(float32); ok {
+			return []byte(strconv.FormatFloat(float64(b), 'g', -1, 32)), true
+		}
+		if b, ok := data.(float64); ok {
+			return []byte(strconv.FormatFloat(b, 'g', -1, 64)), true
 		}
 		return "", false
 	case STRUCT:

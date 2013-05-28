@@ -161,7 +161,8 @@ func (p *TCompactProtocol) WriteStructBegin(name string) TProtocolException {
  * of the field stack.
  */
 func (p *TCompactProtocol) WriteStructEnd() TProtocolException {
-	p.lastFieldId, p.lastField = p.lastField[len(p.lastField)-1], p.lastField[:len(p.lastField)-1]
+	p.lastFieldId = p.lastField[len(p.lastField)-1]
+	p.lastField = p.lastField[:len(p.lastField)-1]
 	return nil
 }
 
@@ -392,7 +393,7 @@ func (p *TCompactProtocol) ReadStructBegin() (name string, err TProtocolExceptio
  */
 func (p *TCompactProtocol) ReadStructEnd() TProtocolException {
 	// consume the last field we read off the wire.
-	p.lastFieldId, p.lastField = p.lastField[len(p.lastField)-1], p.lastField[:len(p.lastField)-1]
+	p.lastFieldId = p.lastField[len(p.lastField)-1]
 	return nil
 }
 

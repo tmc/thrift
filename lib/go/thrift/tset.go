@@ -20,12 +20,14 @@
 package thrift
 
 import (
+	"bytes"
 	"container/list"
 )
 
 /**
  * Helper class that encapsulates set metadata.
  *
+ * Note that sets of structs requires pointers, not struct values.
  */
 type TSet interface {
 	TContainer
@@ -77,12 +79,16 @@ func (p *tSet) Contains(data interface{}) bool {
 
 func (p *tSet) Add(other interface{}) {
 	if data, ok := p.elemType.CoerceData(other); ok {
-		for elem := p.l.Front(); elem != nil; elem = elem.Next() {
-			if cmp, ok := p.elemType.Compare(data, elem.Value); ok && cmp >= 0 {
-				if cmp > 0 {
-					p.l.InsertBefore(data, elem)
+		if p.l.Front() == nil {
+			p.l.PushFront(data)
+		} else {
+			for elem := p.l.Front(); elem != nil; elem = elem.Next() {
+				if cmp, ok := p.elemType.Compare(data, elem.Value); ok && cmp >= 0 {
+					if cmp > 0 {
+						p.l.InsertBefore(data, elem)
+					}
+					return
 				}
-				return
 			}
 		}
 	}
@@ -120,6 +126,14 @@ func (p *tSet) find(data interface{}) *list.Element {
 	}
 	data, ok := p.elemType.CoerceData(data)
 	if data == nil || !ok {
+		return nil
+	}
+	if p.elemType == BINARY {
+		for elem := p.l.Front(); elem != nil; elem = elem.Next() {
+			if bytes.Compare(data.([]byte), elem.Value.([]byte)) == 0 {
+				return elem
+			}
+		}
 		return nil
 	}
 	if p.elemType.IsBaseType() || p.elemType.IsEnum() {

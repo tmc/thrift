@@ -19,22 +19,19 @@
 
 package thrift
 
+import ()
+
 /**
  * Generic exception class for Thrift.
  *
  */
 
 type TException interface {
-	String() string
 	Error() string
 }
 
 type tException struct {
 	message string
-}
-
-func (p *tException) String() string {
-	return p.message
 }
 
 func (p *tException) Error() string {

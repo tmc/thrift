@@ -17,14 +17,12 @@
  * under the License.
  */
 
-package thrift_test
+package thrift
 
 import (
 	"net"
-	"os"
 	"strconv"
 	"testing"
-	. "thrift"
 )
 
 const TRANSPORT_BINARY_DATA_SIZE = 4096
