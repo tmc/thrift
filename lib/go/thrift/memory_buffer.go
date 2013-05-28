@@ -21,7 +21,6 @@ package thrift
 
 import (
 	"bytes"
-	"io"
 )
 
 /**
@@ -29,7 +28,7 @@ import (
  *
  */
 type TMemoryBuffer struct {
-	buf  *bytes.Buffer
+	*bytes.Buffer
 	size int
 }
 
@@ -52,12 +51,12 @@ func NewTMemoryBufferTransportFactory(size int) *TMemoryBufferTransportFactory {
 }
 
 func NewTMemoryBuffer() *TMemoryBuffer {
-	return &TMemoryBuffer{buf: &bytes.Buffer{}, size: 0}
+	return &TMemoryBuffer{Buffer: &bytes.Buffer{}, size: 0}
 }
 
 func NewTMemoryBufferLen(size int) *TMemoryBuffer {
 	buf := make([]byte, 0, size)
-	return &TMemoryBuffer{buf: bytes.NewBuffer(buf), size: size}
+	return &TMemoryBuffer{Buffer: bytes.NewBuffer(buf), size: size}
 }
 
 func (p *TMemoryBuffer) IsOpen() bool {
@@ -73,54 +72,15 @@ func (p *TMemoryBuffer) Peek() bool {
 }
 
 func (p *TMemoryBuffer) Close() error {
-	p.buf.Reset()
+	p.Buffer.Reset()
 	return nil
-}
-
-func (p *TMemoryBuffer) Read(buf []byte) (int, error) {
-	return p.buf.Read(buf)
 }
 
 func (p *TMemoryBuffer) ReadAll(buf []byte) (int, error) {
 	return ReadAllTransport(p, buf)
 }
 
-func (p *TMemoryBuffer) ReadByte() (byte, error) {
-	return p.buf.ReadByte()
-}
-
-func (p *TMemoryBuffer) ReadFrom(r io.Reader) (int64, error) {
-	return p.buf.ReadFrom(r)
-}
-
-func (p *TMemoryBuffer) Write(buf []byte) (int, error) {
-	return p.buf.Write(buf)
-}
-
-func (p *TMemoryBuffer) WriteString(buf string) (int, error) {
-	return p.buf.WriteString(buf)
-}
-
-func (p *TMemoryBuffer) WriteTo(w io.Writer) (int64, error) {
-	return p.buf.WriteTo(w)
-}
-
-func (p *TMemoryBuffer) Flush() error {
+// Flushing a memory buffer is a no-op
+func (p *MemoryBuffer) Flush() error {
 	return nil
-}
-
-func (p *TMemoryBuffer) Reset() {
-	p.buf.Reset()
-}
-
-func (p *TMemoryBuffer) Bytes() []byte {
-	return p.buf.Bytes()
-}
-
-func (p *TMemoryBuffer) Len() int {
-	return p.buf.Len()
-}
-
-func (p *TMemoryBuffer) String() string {
-	return p.buf.String()
 }
