@@ -24,7 +24,7 @@ import (
 	"testing"
 )
 
-func TestIOStreamTransport(t *testing.T) {
-	trans := NewTIOStreamTransportRW(bytes.NewBuffer(make([]byte, 0, 1024)))
+func TestStreamTransport(t *testing.T) {
+	trans := NewStreamTransportRW(bytes.NewBuffer(make([]byte, 0, 1024)))
 	TransportTest(t, trans, trans)
 }

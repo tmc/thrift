@@ -24,137 +24,97 @@ import (
 	"io"
 )
 
-/**
- * This is the most commonly used base transport. It takes an InputStream
- * and an OutputStream and uses those to perform all transport operations.
- * This allows for compatibility with all the nice constructs Java already
- * has to provide a variety of types of streams.
- *
- */
-type TIOStreamTransport struct {
+// StreamTransport is a Transport made of an io.Reader and/or an io.Writer
+type StreamTransport struct {
 	Reader       io.Reader
 	Writer       io.Writer
 	IsReadWriter bool
 }
 
-type TIOStreamTransportFactory struct {
+type StreamTransportFactory struct {
 	Reader       io.Reader
 	Writer       io.Writer
 	IsReadWriter bool
 }
 
-func (p *TIOStreamTransportFactory) GetTransport(trans TTransport) TTransport {
+func (p *StreamTransportFactory) GetTransport(trans TTransport) TTransport {
 	if trans != nil {
-		t, ok := trans.(*TIOStreamTransport)
+		t, ok := trans.(*StreamTransport)
 		if ok {
 			if t.IsReadWriter {
-				return NewTIOStreamTransportRW(t.Reader.(io.ReadWriter))
+				return NewStreamTransportRW(t.Reader.(io.ReadWriter))
 			}
 			if t.Reader != nil && t.Writer != nil {
-				return NewTIOStreamTransportRAndW(t.Reader, t.Writer)
+				return NewStreamTransportRAndW(t.Reader, t.Writer)
 			}
 			if t.Reader != nil && t.Writer == nil {
-				return NewTIOStreamTransportR(t.Reader)
+				return NewStreamTransportR(t.Reader)
 			}
 			if t.Reader == nil && t.Writer != nil {
-				return NewTIOStreamTransportW(t.Writer)
+				return NewStreamTransportW(t.Writer)
 			}
-			return NewTIOStreamTransportDefault()
+			return NewStreamTransportDefault()
 		}
 	}
 	if p.IsReadWriter {
-		return NewTIOStreamTransportRW(p.Reader.(io.ReadWriter))
+		return NewStreamTransportRW(p.Reader.(io.ReadWriter))
 	}
 	if p.Reader != nil && p.Writer != nil {
-		return NewTIOStreamTransportRAndW(p.Reader, p.Writer)
+		return NewStreamTransportRAndW(p.Reader, p.Writer)
 	}
 	if p.Reader != nil && p.Writer == nil {
-		return NewTIOStreamTransportR(p.Reader)
+		return NewStreamTransportR(p.Reader)
 	}
 	if p.Reader == nil && p.Writer != nil {
-		return NewTIOStreamTransportW(p.Writer)
+		return NewStreamTransportW(p.Writer)
 	}
-	return NewTIOStreamTransportDefault()
+	return NewStreamTransportDefault()
 }
 
-func NewTIOStreamTransportFactory(reader io.Reader, writer io.Writer, isReadWriter bool) *TIOStreamTransportFactory {
-	return &TIOStreamTransportFactory{Reader: reader, Writer: writer, IsReadWriter: isReadWriter}
+func NewStreamTransportFactory(reader io.Reader, writer io.Writer, isReadWriter bool) *StreamTransportFactory {
+	return &StreamTransportFactory{Reader: reader, Writer: writer, IsReadWriter: isReadWriter}
 }
 
-/**
- * Subclasses can invoke the default constructor and then assign the input
- * streams in the open method.
- */
-func NewTIOStreamTransportDefault() *TIOStreamTransport {
-	return &TIOStreamTransport{}
+func NewStreamTransportDefault() *StreamTransport {
+	return &StreamTransport{}
 }
 
-/**
- * Input stream constructor.
- *
- * @param is Input stream to read from
- */
-func NewTIOStreamTransportR(r io.Reader) *TIOStreamTransport {
-	return &TIOStreamTransport{Reader: bufio.NewReader(r)}
+func NewStreamTransportR(r io.Reader) *StreamTransport {
+	return &StreamTransport{Reader: bufio.NewReader(r)}
 }
 
-/**
- * Output stream constructor.
- *
- * @param os Output stream to read from
- */
-func NewTIOStreamTransportW(w io.Writer) *TIOStreamTransport {
-	return &TIOStreamTransport{Writer: bufio.NewWriter(w)}
+func NewStreamTransportW(w io.Writer) *StreamTransport {
+	return &StreamTransport{Writer: bufio.NewWriter(w)}
 }
 
-/**
- * Two-way stream constructor.
- *
- * @param is Input stream to read from
- * @param os Output stream to read from
- */
-func NewTIOStreamTransportRAndW(r io.Reader, w io.Writer) *TIOStreamTransport {
-	return &TIOStreamTransport{Reader: bufio.NewReader(r), Writer: bufio.NewWriter(w)}
+func NewStreamTransportRAndW(r io.Reader, w io.Writer) *StreamTransport {
+	return &StreamTransport{Reader: bufio.NewReader(r), Writer: bufio.NewWriter(w)}
 }
 
-/**
- * Two-way stream constructor.
- *
- * @param is Input stream to read from
- * @param os Output stream to read from
- */
-func NewTIOStreamTransportRW(rw io.ReadWriter) *TIOStreamTransport {
+func NewStreamTransportRW(rw io.ReadWriter) *StreamTransport {
 	// bufio has a bug where once a Reader hits EOF, a new Write never brings the reader out of EOF
 	// even if reader and writer use the same underlier
 	//bufrw := bufio.NewReadWriter(bufio.NewReader(rw), bufio.NewWriter(rw));
-	return &TIOStreamTransport{Reader: rw, Writer: rw, IsReadWriter: true}
+	return &StreamTransport{Reader: rw, Writer: rw, IsReadWriter: true}
 }
 
-/**
- * The streams must already be open at construction time, so this should
- * always return true.
- *
- * @return true
- */
-func (p *TIOStreamTransport) IsOpen() bool {
+// (The streams must already be open at construction time, so this should
+// always return true.)
+func (p *StreamTransport) IsOpen() bool {
 	return true
 }
 
-/**
- * The streams must already be open. This method does nothing.
- */
-func (p *TIOStreamTransport) Open() error {
+// (The streams must already be open. This method does nothing.)
+func (p *StreamTransport) Open() error {
 	return nil
 }
 
-func (p *TIOStreamTransport) Peek() bool {
+func (p *StreamTransport) Peek() bool {
 	return p.IsOpen()
 }
 
-/**
- * Closes both the input and output streams.
- */
-func (p *TIOStreamTransport) Close() error {
+// Closes both the input and output streams.
+func (p *StreamTransport) Close() error {
 	closedReader := false
 	if p.Reader != nil {
 		c, ok := p.Reader.(io.Closer)
@@ -162,7 +122,7 @@ func (p *TIOStreamTransport) Close() error {
 			e := c.Close()
 			closedReader = true
 			if e != nil {
-				LOGGER.Print("Error closing input stream.", e)
+				return e
 			}
 		}
 		p.Reader = nil
@@ -172,7 +132,7 @@ func (p *TIOStreamTransport) Close() error {
 		if ok {
 			e := c.Close()
 			if e != nil {
-				LOGGER.Print("Error closing output stream.", e)
+				return e
 			}
 		}
 		p.Writer = nil
@@ -180,10 +140,8 @@ func (p *TIOStreamTransport) Close() error {
 	return nil
 }
 
-/**
- * Reads from the underlying input stream if not null.
- */
-func (p *TIOStreamTransport) Read(buf []byte) (int, error) {
+// Reads from the underlying input stream if not null.
+func (p *StreamTransport) Read(buf []byte) (int, error) {
 	if p.Reader == nil {
 		return 0, NewTTransportException(NOT_OPEN, "Cannot read from null inputStream")
 	}
@@ -191,29 +149,21 @@ func (p *TIOStreamTransport) Read(buf []byte) (int, error) {
 	return n, NewTTransportExceptionFromError(err)
 }
 
-func (p *TIOStreamTransport) ReadAll(buf []byte) (int, error) {
+func (p *StreamTransport) ReadAll(buf []byte) (int, error) {
 	return ReadAllTransport(p, buf)
 }
 
-/**
- * Writes to the underlying output stream if not null.
- */
-func (p *TIOStreamTransport) Write(buf []byte) (int, error) {
+// Writes to the underlying output stream if not null.
+func (p *StreamTransport) Write(buf []byte) (int, error) {
 	if p.Writer == nil {
-		LOGGER.Print("Could not write to iostream as Writer is null\n")
 		return 0, NewTTransportException(NOT_OPEN, "Cannot write to null outputStream")
 	}
 	n, err := p.Writer.Write(buf)
-	if n == 0 || err != nil {
-		LOGGER.Print("Error writing to iostream, only wrote ", n, " bytes: ", err, "\n")
-	}
 	return n, NewTTransportExceptionFromError(err)
 }
 
-/**
- * Flushes the underlying output stream if not null.
- */
-func (p *TIOStreamTransport) Flush() error {
+// Flushes the underlying output stream if not null.
+func (p *StreamTransport) Flush() error {
 	if p.Writer == nil {
 		return NewTTransportException(NOT_OPEN, "Cannot flush null outputStream")
 	}

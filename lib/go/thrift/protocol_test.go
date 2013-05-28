@@ -92,7 +92,7 @@ func ReadWriteProtocolTest(t *testing.T, protocolFactory TProtocolFactory) {
 	defer l.Close()
 	transports := []TTransportFactory{
 		NewTMemoryBufferTransportFactory(1024),
-		NewTIOStreamTransportFactory(buf, buf, true),
+		NewStreamTransportFactory(buf, buf, true),
 		NewTFramedTransportFactory(NewTMemoryBufferTransportFactory(1024)),
 		NewTHttpPostClientTransportFactory("http://" + addr.String()),
 	}

@@ -28,7 +28,7 @@ func TestReadWriteCompactProtocol(t *testing.T) {
 	/*
 	   transports := []TTransport{
 	     NewTMemoryBuffer(),
-	     NewTIOStreamTransportRW(bytes.NewBuffer(make([]byte, 0, 16384))),
+	     NewStreamTransportRW(bytes.NewBuffer(make([]byte, 0, 16384))),
 	     NewTFramedTransport(NewTMemoryBuffer()),
 	   }
 	   for _, trans := range transports {
