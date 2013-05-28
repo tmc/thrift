@@ -1918,7 +1918,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "    fmt.Fprint(os.Stderr, \"Error resolving address\", err.Error())" << endl <<
              indent() << "    os.Exit(1)" << endl <<
              indent() << "  }" << endl <<
-             indent() << "  trans, err = thrift.NewTSocketAddr(addr)" << endl <<
+             indent() << "  trans = thrift.NewTSocketAddr(addr)" << endl <<
              indent() << "  if framed {" << endl <<
              indent() << "    trans = thrift.NewTFramedTransport(trans)" << endl <<
              indent() << "  }" << endl <<
