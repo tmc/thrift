@@ -25,42 +25,19 @@ import (
 	"time"
 )
 
-/**
- * Socket implementation of the TTransport interface. To be commented soon!
- *
- */
 type TSocket struct {
 	writeBuffer *bytes.Buffer
-	/**
-	 * Wrapped Socket object
-	 */
-	conn net.Conn
-	/**
-	 * Remote Addr
-	 */
-	addr net.Addr
-	/**
-	 * Socket timeout in nanoseconds
-	 */
+	conn        net.Conn
+	addr        net.Addr
 	nsecTimeout int64
 }
 
-/**
- * Constructor that takes an already created socket.
- *
- * @param socket Already created socket object
- * @throws TTransportException if there is an error setting up the streams
- */
+// Creates a Socket from an existing net.Conn
 func NewTSocketConn(connection net.Conn) (*TSocket, TTransportException) {
 	return NewTSocketConnTimeout(connection, 0)
 }
 
-/**
- * Constructor that takes an already created socket.
- *
- * @param socket Already created socket object
- * @throws TTransportException if there is an error setting up the streams
- */
+// Creates a Socket from an existing net.Conn
 func NewTSocketConnTimeout(connection net.Conn, nsecTimeout int64) (*TSocket, TTransportException) {
 	address := connection.RemoteAddr()
 	if address == nil {
@@ -70,35 +47,18 @@ func NewTSocketConnTimeout(connection net.Conn, nsecTimeout int64) (*TSocket, TT
 	return p, nil
 }
 
-/**
- * Creates a new unconnected socket that will connect to the given host
- * on the given port.
- *
- * @param host Remote host
- * @param port Remote port
- */
+// Creates a Socket from a net.Addr
 func NewTSocketAddr(address net.Addr) *TSocket {
 	return NewTSocket(address, 0)
 }
 
-/**
- * Creates a new unconnected socket that will connect to the given host
- * on the given port.
- *
- * @param host    Remote host
- * @param port    Remote port
- * @param nsecTimeout Socket timeout
- */
+// Creates a Socket from a net.Addr
 func NewTSocket(address net.Addr, nsecTimeout int64) *TSocket {
 	sock := &TSocket{addr: address, nsecTimeout: nsecTimeout, writeBuffer: bytes.NewBuffer(make([]byte, 0, 4096))}
 	return sock
 }
 
-/**
- * Sets the socket timeout
- *
- * @param timeout Nanoseconds timeout
- */
+// Sets the socket timeout
 func (p *TSocket) SetTimeout(nsecTimeout int64) error {
 	p.nsecTimeout = nsecTimeout
 	return nil
@@ -118,16 +78,10 @@ func (p *TSocket) pushDeadline(read, write bool) {
 	}
 }
 
-/**
- * Returns a reference to the underlying socket.
- */
 func (p *TSocket) Conn() net.Conn {
 	return p.conn
 }
 
-/**
- * Checks whether the socket is connected.
- */
 func (p *TSocket) IsOpen() bool {
 	if p.conn == nil {
 		return false
@@ -135,9 +89,7 @@ func (p *TSocket) IsOpen() bool {
 	return true
 }
 
-/**
- * Connects the socket, creating a new socket object if necessary.
- */
+// Connects the socket, creating a new socket object if necessary.
 func (p *TSocket) Open() error {
 	if p.IsOpen() {
 		return NewTTransportException(ALREADY_OPEN, "Socket already connected.")
@@ -154,27 +106,22 @@ func (p *TSocket) Open() error {
 	var err error
 	if p.nsecTimeout > 0 {
 		if p.conn, err = net.DialTimeout(p.addr.Network(), p.addr.String(), time.Duration(p.nsecTimeout)); err != nil {
-			LOGGER.Print("Could not open socket", err.Error())
 			return NewTTransportException(NOT_OPEN, err.Error())
 		}
 	} else {
 		if p.conn, err = net.Dial(p.addr.Network(), p.addr.String()); err != nil {
-			LOGGER.Print("Could not open socket", err.Error())
 			return NewTTransportException(NOT_OPEN, err.Error())
 		}
 	}
 	return nil
 }
 
-/**
- * Closes the socket.
- */
+// Closes the socket.
 func (p *TSocket) Close() error {
 	// Close the socket
 	if p.conn != nil {
 		err := p.conn.Close()
 		if err != nil {
-			LOGGER.Print("Could not close socket. ", err.Error())
 			return err
 		}
 		p.conn = nil
