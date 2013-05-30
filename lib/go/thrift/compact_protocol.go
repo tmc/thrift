@@ -22,6 +22,7 @@ package thrift
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
 	"math"
 	"strings"
 )
@@ -530,7 +531,7 @@ func (p *TCompactProtocol) ReadBool() (value bool, err TProtocolException) {
  */
 func (p *TCompactProtocol) ReadByte() (value byte, err TProtocolException) {
 	buf := []byte{0}
-	_, e := p.trans.ReadAll(buf)
+	_, e := io.ReadFull(p.trans, buf)
 	if e != nil {
 		return 0, NewTProtocolExceptionFromError(e)
 	}
@@ -574,7 +575,7 @@ func (p *TCompactProtocol) ReadI64() (value int64, err TProtocolException) {
  */
 func (p *TCompactProtocol) ReadDouble() (value float64, err TProtocolException) {
 	longBits := make([]byte, 8)
-	_, e := p.trans.ReadAll(longBits)
+	_, e := io.ReadFull(p.trans, longBits)
 	if e != nil {
 		return 0.0, NewTProtocolExceptionFromError(e)
 	}
@@ -602,8 +603,8 @@ func (p *TCompactProtocol) ReadBinary() (value []byte, err TProtocolException) {
 	}
 
 	buf := make([]byte, length)
-	p.trans.ReadAll(buf)
-	return buf, nil
+	_, e = io.ReadFull(p.trans, buf)
+	return buf, NewTProtocolExceptionFromError(e)
 }
 
 func (p *TCompactProtocol) Flush() (err TProtocolException) {

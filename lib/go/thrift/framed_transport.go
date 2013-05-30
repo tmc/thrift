@@ -21,6 +21,7 @@ package thrift
 
 import (
 	"bytes"
+	"io"
 	"encoding/binary"
 )
 
@@ -79,10 +80,6 @@ func (p *TFramedTransport) Read(buf []byte) (int, error) {
 	return got, NewTTransportExceptionFromError(err)
 }
 
-func (p *TFramedTransport) ReadAll(buf []byte) (int, error) {
-	return ReadAllTransport(p, buf)
-}
-
 func (p *TFramedTransport) Write(buf []byte) (int, error) {
 	n, err := p.writeBuffer.Write(buf)
 	return n, NewTTransportExceptionFromError(err)
@@ -108,21 +105,18 @@ func (p *TFramedTransport) Flush() error {
 
 func (p *TFramedTransport) readFrame() (int, error) {
 	buf := []byte{0, 0, 0, 0}
-	_, err := p.transport.ReadAll(buf)
-	if err != nil {
+	if _, err := io.ReadFull(p.transport, buf); err != nil {
 		return 0, err
 	}
 	size := int(binary.BigEndian.Uint32(buf))
 	if size < 0 {
-		// TODO(pomack) log error
 		return 0, NewTTransportException(UNKNOWN_TRANSPORT_EXCEPTION, "Read a negative frame size ("+string(size)+")")
 	}
 	if size == 0 {
 		return 0, nil
 	}
 	buf2 := make([]byte, size)
-	n, err := p.transport.ReadAll(buf2)
-	if err != nil {
+	if n, err := io.ReadFull(p.transport, buf2); err != nil {
 		return n, err
 	}
 	p.readBuffer = bytes.NewBuffer(buf2)

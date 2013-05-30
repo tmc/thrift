@@ -137,10 +137,6 @@ func (p *TServerSocket) Read(buf []byte) (int, error) {
 	return 0, NewTTransportException(UNKNOWN_TRANSPORT_EXCEPTION, "TServerSocket.Read([]byte) is not implemented")
 }
 
-func (p *TServerSocket) ReadAll(buf []byte) (int, error) {
-	return ReadAllTransport(p, buf)
-}
-
 /**
  * Perform a nonblocking write of the data in buffer;
  */

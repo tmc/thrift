@@ -122,10 +122,6 @@ func (p *THttpClient) Read(buf []byte) (int, error) {
 	return n, NewTTransportExceptionFromError(err)
 }
 
-func (p *THttpClient) ReadAll(buf []byte) (int, error) {
-	return ReadAllTransport(p, buf)
-}
-
 func (p *THttpClient) Write(buf []byte) (int, error) {
 	n, err := p.requestBuffer.Write(buf)
 	return n, err

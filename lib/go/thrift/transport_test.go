@@ -20,6 +20,7 @@
 package thrift
 
 import (
+	"io"
 	"net"
 	"strconv"
 	"testing"
@@ -41,16 +42,10 @@ func init() {
 func TransportTest(t *testing.T, writeTrans TTransport, readTrans TTransport) {
 	buf := make([]byte, TRANSPORT_BINARY_DATA_SIZE)
 	if !writeTrans.IsOpen() {
-		err := writeTrans.Open()
-		if err != nil {
-			t.Fatalf("Transport %T cannot open write transport: %s", writeTrans, err)
-		}
+		t.Fatalf("Transport %T not open: %s", writeTrans, writeTrans)
 	}
 	if !readTrans.IsOpen() {
-		err := readTrans.Open()
-		if err != nil {
-			t.Fatalf("Transport %T cannot open read transport: %s", readTrans, err)
-		}
+		t.Fatalf("Transport %T not open: %s", readTrans, readTrans)
 	}
 	_, err := writeTrans.Write(transport_bdata)
 	if err != nil {
@@ -60,7 +55,7 @@ func TransportTest(t *testing.T, writeTrans TTransport, readTrans TTransport) {
 	if err != nil {
 		t.Fatalf("Transport %T cannot flush write of binary data: %s", writeTrans, err)
 	}
-	n, err := readTrans.ReadAll(buf)
+	n, err := io.ReadFull(readTrans, buf)
 	if err != nil {
 		t.Errorf("Transport %T cannot read binary data of length %d: %s", readTrans, TRANSPORT_BINARY_DATA_SIZE, err)
 	}
@@ -79,10 +74,6 @@ func TransportTest(t *testing.T, writeTrans TTransport, readTrans TTransport) {
 	err = writeTrans.Flush()
 	if err != nil {
 		t.Fatalf("Transport %T cannot flush write binary data 2: %s", writeTrans, err)
-	}
-	b := readTrans.Peek()
-	if b != true {
-		t.Errorf("Transport %T returned %s for Peek()", readTrans, b)
 	}
 	buf = make([]byte, TRANSPORT_BINARY_DATA_SIZE)
 	read := 1

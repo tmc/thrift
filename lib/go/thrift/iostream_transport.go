@@ -149,10 +149,6 @@ func (p *StreamTransport) Read(buf []byte) (int, error) {
 	return n, NewTTransportExceptionFromError(err)
 }
 
-func (p *StreamTransport) ReadAll(buf []byte) (int, error) {
-	return ReadAllTransport(p, buf)
-}
-
 // Writes to the underlying output stream if not null.
 func (p *StreamTransport) Write(buf []byte) (int, error) {
 	if p.Writer == nil {

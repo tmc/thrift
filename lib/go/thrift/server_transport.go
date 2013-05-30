@@ -19,10 +19,7 @@
 
 package thrift
 
-/**
- * Server transport. Object which provides client transports.
- *
- */
+// Server transport. Object which provides client transports.
 type TServerTransport interface {
 	Listen() error
 	Accept() (TTransport, error)

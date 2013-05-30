@@ -76,11 +76,7 @@ func (p *TMemoryBuffer) Close() error {
 	return nil
 }
 
-func (p *TMemoryBuffer) ReadAll(buf []byte) (int, error) {
-	return ReadAllTransport(p, buf)
-}
-
 // Flushing a memory buffer is a no-op
-func (p *MemoryBuffer) Flush() error {
+func (p *TMemoryBuffer) Flush() error {
 	return nil
 }

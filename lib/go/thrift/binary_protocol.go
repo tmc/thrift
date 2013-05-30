@@ -27,7 +27,6 @@ import (
 )
 
 type TBinaryProtocol struct {
-	//TProtocolBase;
 	trans            TTransport
 	_StrictRead      bool
 	_StrictWrite     bool
@@ -432,12 +431,11 @@ func (p *TBinaryProtocol) ReadBinary() ([]byte, TProtocolException) {
 		return nil, e
 	}
 	isize := int(size)
-	e = p.checkReadLength(isize)
-	if e != nil {
+	if e = p.checkReadLength(isize); e != nil {
 		return nil, e
 	}
 	buf := make([]byte, isize)
-	_, err := p.trans.ReadAll(buf)
+	_, err := io.ReadFull(p.trans, buf)
 	return buf, NewTProtocolExceptionFromError(err)
 }
 
@@ -454,11 +452,10 @@ func (p *TBinaryProtocol) Transport() TTransport {
 }
 
 func (p *TBinaryProtocol) readAll(buf []byte) TProtocolException {
-	e := p.checkReadLength(len(buf))
-	if e != nil {
+	if e := p.checkReadLength(len(buf)); e != nil {
 		return e
 	}
-	_, err := p.trans.ReadAll(buf)
+	_, err := io.ReadFull(p.trans, buf)
 	return NewTProtocolExceptionFromError(err)
 }
 
@@ -481,12 +478,11 @@ func (p *TBinaryProtocol) readStringBody(size int) (value string, err TProtocolE
 	if size < 0 {
 		return "", nil
 	}
-	err = p.checkReadLength(size)
-	if err != nil {
+	if err := p.checkReadLength(size); err != nil {
 		return "", err
 	}
 	isize := int(size)
 	buf := make([]byte, isize)
-	_, e := p.trans.ReadAll(buf)
+	_, e := io.ReadFull(p.trans, buf)
 	return string(buf), NewTProtocolExceptionFromError(e)
 }

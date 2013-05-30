@@ -138,10 +138,6 @@ func (p *TSocket) Read(buf []byte) (int, error) {
 	return n, NewTTransportExceptionFromError(err)
 }
 
-func (p *TSocket) ReadAll(buf []byte) (int, error) {
-	return ReadAllTransport(p, buf)
-}
-
 func (p *TSocket) Write(buf []byte) (int, error) {
 	if !p.IsOpen() {
 		return 0, NewTTransportException(NOT_OPEN, "Connection not open")
