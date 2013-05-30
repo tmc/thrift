@@ -20,54 +20,55 @@
 package thrift
 
 import (
-	"bytes"
 	"net"
 	"time"
 )
 
 type TSocket struct {
-	writeBuffer *bytes.Buffer
-	conn        net.Conn
-	addr        net.Addr
-	nsecTimeout int64
+	conn    net.Conn
+	addr    net.Addr
+	timeout time.Duration
 }
 
-// Creates a Socket from an existing net.Conn
-func NewTSocketConn(connection net.Conn) (*TSocket, TTransportException) {
-	return NewTSocketConnTimeout(connection, 0)
+// NewTSocket creates a net.Conn-backed TTransport, given a host and port
+//
+// Example:
+// 	trans, err := thrift.NewTSocket("localhost:9090")
+func NewTSocket(hostPort string) (*TSocket, error) {
+	return NewTSocketTimeout(hostPort, 0)
 }
 
-// Creates a Socket from an existing net.Conn
-func NewTSocketConnTimeout(connection net.Conn, nsecTimeout int64) (*TSocket, TTransportException) {
-	address := connection.RemoteAddr()
-	if address == nil {
-		address = connection.LocalAddr()
+// NewTSocketTimeout creates a net.Conn-backed TTransport, given a host and port
+// it also accepts a timeout as a time.Duration
+func NewTSocketTimeout(hostPort string, timeout time.Duration) (*TSocket, error) {
+	//conn, err := net.DialTimeout(network, address, timeout)
+	addr, err := net.ResolveTCPAddr("tcp", hostPort)
+	if err != nil {
+		return nil, err
 	}
-	p := &TSocket{conn: connection, addr: address, nsecTimeout: nsecTimeout, writeBuffer: bytes.NewBuffer(make([]byte, 0, 4096))}
-	return p, nil
+	return NewTSocketFromAddrTimeout(addr, timeout), nil
 }
 
-// Creates a Socket from a net.Addr
-func NewTSocketAddr(address net.Addr) *TSocket {
-	return NewTSocket(address, 0)
+// Creates a TSocket from a net.Addr
+func NewTSocketFromAddrTimeout(addr net.Addr, timeout time.Duration) *TSocket {
+	return &TSocket{addr: addr, timeout: timeout}
 }
 
-// Creates a Socket from a net.Addr
-func NewTSocket(address net.Addr, nsecTimeout int64) *TSocket {
-	sock := &TSocket{addr: address, nsecTimeout: nsecTimeout, writeBuffer: bytes.NewBuffer(make([]byte, 0, 4096))}
-	return sock
+// Creates a TSocket from an existing net.Conn
+func NewTSocketFromConnTimeout(conn net.Conn, timeout time.Duration) *TSocket {
+	return &TSocket{conn:conn, addr: conn.RemoteAddr(), timeout: timeout}
 }
 
 // Sets the socket timeout
-func (p *TSocket) SetTimeout(nsecTimeout int64) error {
-	p.nsecTimeout = nsecTimeout
+func (p *TSocket) SetTimeout(timeout time.Duration) error {
+	p.timeout = timeout
 	return nil
 }
 
 func (p *TSocket) pushDeadline(read, write bool) {
 	var t time.Time
-	if p.nsecTimeout > 0 {
-		t = time.Now().Add(time.Duration(p.nsecTimeout))
+	if p.timeout > 0 {
+		t = time.Now().Add(time.Duration(p.timeout))
 	}
 	if read && write {
 		p.conn.SetDeadline(t)
@@ -76,17 +77,6 @@ func (p *TSocket) pushDeadline(read, write bool) {
 	} else if write {
 		p.conn.SetWriteDeadline(t)
 	}
-}
-
-func (p *TSocket) Conn() net.Conn {
-	return p.conn
-}
-
-func (p *TSocket) IsOpen() bool {
-	if p.conn == nil {
-		return false
-	}
-	return true
 }
 
 // Connects the socket, creating a new socket object if necessary.
@@ -104,16 +94,23 @@ func (p *TSocket) Open() error {
 		return NewTTransportException(NOT_OPEN, "Cannot open bad address.")
 	}
 	var err error
-	if p.nsecTimeout > 0 {
-		if p.conn, err = net.DialTimeout(p.addr.Network(), p.addr.String(), time.Duration(p.nsecTimeout)); err != nil {
-			return NewTTransportException(NOT_OPEN, err.Error())
-		}
-	} else {
-		if p.conn, err = net.Dial(p.addr.Network(), p.addr.String()); err != nil {
-			return NewTTransportException(NOT_OPEN, err.Error())
-		}
+	if p.conn, err = net.DialTimeout(p.addr.Network(), p.addr.String(), p.timeout); err != nil {
+		return NewTTransportException(NOT_OPEN, err.Error())
 	}
 	return nil
+}
+
+// Retreive the underlying net.Conn
+func (p *TSocket) Conn() net.Conn {
+	return p.conn
+}
+
+// Returns true if the connection is open
+func (p *TSocket) IsOpen() bool {
+	if p.conn == nil {
+		return false
+	}
+	return true
 }
 
 // Closes the socket.
@@ -143,8 +140,7 @@ func (p *TSocket) Write(buf []byte) (int, error) {
 		return 0, NewTTransportException(NOT_OPEN, "Connection not open")
 	}
 	p.pushDeadline(false, true)
-	p.writeBuffer.Write(buf)
-	return len(buf), nil
+	return p.conn.Write(buf)
 }
 
 func (p *TSocket) Peek() bool {
@@ -152,17 +148,12 @@ func (p *TSocket) Peek() bool {
 }
 
 func (p *TSocket) Flush() error {
-	if !p.IsOpen() {
-		return NewTTransportException(NOT_OPEN, "Connection not open")
-	}
-	_, err := p.writeBuffer.WriteTo(p.conn)
-	return NewTTransportExceptionFromError(err)
+	return nil
 }
 
 func (p *TSocket) Interrupt() error {
 	if !p.IsOpen() {
 		return nil
 	}
-	// TODO(pomack) fix Interrupt as this is probably wrong
 	return p.conn.Close()
 }

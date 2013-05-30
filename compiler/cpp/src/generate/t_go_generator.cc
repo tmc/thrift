@@ -1841,6 +1841,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "        \"net/url\"" << endl <<
              indent() << "        \"os\"" << endl <<
              indent() << "        \"strconv\"" << endl <<
+             indent() << "        \"strings\"" << endl <<
              indent() << "        \"" + gen_thrift_import_ + "\"" << endl <<
              indent() << "        \"" << service_module << "\"" << endl <<
              indent() << ")" << endl <<
@@ -1913,12 +1914,19 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "if useHttp {" << endl <<
              indent() << "  trans, err = thrift.NewTHttpClient(parsedUrl.String())" << endl <<
              indent() << "} else {" << endl <<
-             indent() << "  addr, err := net.ResolveTCPAddr(\"tcp\", fmt.Sprint(host, \":\", port))" << endl <<
+             indent() << "  portStr := fmt.Sprint(port)" << endl <<
+             indent() << "  if strings.Contains(host, \":\") {" << endl <<
+             indent() << "         host, portStr, err = net.SplitHostPort(host)" << endl <<
+             indent() << "         if err != nil {" << endl <<
+             indent() << "                 fmt.Fprintln(os.Stderr, \"error with host:\", err)" << endl <<
+             indent() << "                 os.Exit(1)" << endl <<
+             indent() << "         }" << endl <<
+             indent() << "  }" << endl <<
+             indent() << "  trans, err = thrift.NewTSocket(net.JoinHostPort(host, portStr))" << endl <<
              indent() << "  if err != nil {" << endl <<
              indent() << "    fmt.Fprint(os.Stderr, \"Error resolving address\", err.Error())" << endl <<
              indent() << "    os.Exit(1)" << endl <<
              indent() << "  }" << endl <<
-             indent() << "  trans = thrift.NewTSocketAddr(addr)" << endl <<
              indent() << "  if framed {" << endl <<
              indent() << "    trans = thrift.NewTFramedTransport(trans)" << endl <<
              indent() << "  }" << endl <<

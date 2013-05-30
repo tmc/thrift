@@ -26,23 +26,16 @@ import (
 )
 
 func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:9090")
-	if err != nil {
-		fmt.Println("Error resolving address: ", err)
-		return
-	}
-
-	handler := NewCalculatorHandler()
-	processor := tutorial.NewCalculatorProcessor(handler)
-	transport, err := thrift.NewTServerSocketAddr(addr)
+	transport, err := thrift.NewTServerSocket("localhost:9090")
 	if err != nil {
 		fmt.Println("Error creating server socket: ", err)
 		return
 	}
-
+	handler := NewCalculatorHandler()
+	processor := tutorial.NewCalculatorProcessor(handler)
 	server := thrift.NewTSimpleServer4(processor, transport, transportFactory, protocolFactory)
 
-	fmt.Println("Starting the simple server... on ", addr)
+	fmt.Println("Starting the simple server... on ", transport.Addr())
 	if err = server.Serve(); err != nil {
 		fmt.Println("Error during simple server: ", err)
 	}

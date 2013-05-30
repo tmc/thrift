@@ -21,166 +21,87 @@ package thrift
 
 import (
 	"net"
+	"time"
 )
 
 type TServerSocket struct {
-	/**
-	 * Underlying socket conection object
-	 */
-	conn net.Conn
-	/**
-	 * Underlying socket conection object
-	 */
-	listener net.Listener
-
-	/**
-	 * Address to listen on
-	 */
-	addr net.Addr
-
-	/**
-	 * Client timeout in nanoseconds
-	 */
-	nsecClientTimeout int64
-}
-
-type TServerSocketTransportFactory struct {
+	listener          net.Listener
 	addr              net.Addr
-	nsecClientTimeout int64
+	clientTimeout time.Duration
+	interrupted       bool
 }
 
-func (p *TServerSocketTransportFactory) GetTransport(trans TTransport) TTransport {
-	if trans != nil {
-		t, ok := trans.(*TServerSocket)
-		if ok && t.addr != nil {
-			s, _ := NewTServerSocketAddrTimeout(t.addr, t.nsecClientTimeout)
-			return s
-		}
+func NewTServerSocket(listenAddr string) (*TServerSocket, error) {
+	return NewTServerSocketTimeout(listenAddr, 0)
+}
+
+func NewTServerSocketTimeout(listenAddr string, clientTimeout time.Duration) (*TServerSocket, error) {
+	addr, err := net.ResolveTCPAddr("tcp", listenAddr)
+	if err != nil {
+		return nil, err
 	}
-	s, _ := NewTServerSocketAddrTimeout(p.addr, p.nsecClientTimeout)
-	return s
+	return &TServerSocket{addr: addr, clientTimeout: clientTimeout}, nil
 }
 
-func NewTServerSocketTransportFactory(addr net.Addr, nsecClientTimeout int64) *TServerSocketTransportFactory {
-	return &TServerSocketTransportFactory{addr: addr, nsecClientTimeout: nsecClientTimeout}
-}
-
-func NewTServerSocketConn(conn net.Conn) *TServerSocket {
-	return NewTServerSocketConnTimeout(conn, 0)
-}
-
-func NewTServerSocketConnTimeout(conn net.Conn, nsecClientTimeout int64) *TServerSocket {
-	v := &TServerSocket{conn: conn, addr: conn.LocalAddr(), nsecClientTimeout: nsecClientTimeout}
-	return v
-}
-
-func NewTServerSocketAddr(addr net.Addr) (*TServerSocket, TTransportException) {
-	return NewTServerSocketAddrTimeout(addr, 0)
-}
-
-func NewTServerSocketAddrTimeout(addr net.Addr, nsecClientTimeout int64) (*TServerSocket, TTransportException) {
-	s := &TServerSocket{addr: addr, nsecClientTimeout: nsecClientTimeout}
-	return s, nil
-}
-
-func (p *TServerSocket) Listen() (err error) {
-	if p.listener == nil {
-		if p.listener, err = net.Listen("tcp", p.addr.String()); err != nil {
-			return err
-		}
+func (p *TServerSocket) Listen() error {
+	if p.IsListening() {
+		return nil
 	}
-	return nil
+       l, err := net.Listen(p.addr.Network(), p.addr.String())
+       if err != nil {
+              return err
+       }
+       p.listener = l
+       return nil
 }
 
 func (p *TServerSocket) Accept() (TTransport, error) {
+	if p.interrupted {
+		return nil, errTransportInterrupted
+	}
 	if p.listener == nil {
-		if err := p.Listen(); err != nil {
-			return nil, NewTTransportExceptionFromError(err)
-		}
-		if p.listener == nil {
-			return nil, NewTTransportException(NOT_OPEN, "No underlying server socket")
-		}
+		return nil, NewTTransportException(NOT_OPEN, "No underlying server socket")
 	}
 	conn, err := p.listener.Accept()
 	if err != nil {
 		return nil, NewTTransportExceptionFromError(err)
 	}
-	return NewTSocketConnTimeout(conn, p.nsecClientTimeout)
+	return NewTSocketFromConnTimeout(conn, p.clientTimeout), nil
 }
 
-/**
- * Checks whether the socket is connected.
- */
-func (p *TServerSocket) IsOpen() bool {
+// Checks whether the socket is listening.
+func (p *TServerSocket) IsListening() bool {
 	return p.listener != nil
 }
 
-/**
- * Connects the socket, creating a new socket object if necessary.
- */
+// Connects the socket, creating a new socket object if necessary.
 func (p *TServerSocket) Open() error {
-	if !p.IsOpen() {
-		l, err := net.Listen(p.addr.Network(), p.addr.String())
-		if err != nil {
-			return err
-		}
-		p.listener = l
-		return nil
+	if p.IsListening() {
+		return NewTTransportException(ALREADY_OPEN, "Server socket already open")
 	}
-	return NewTTransportException(ALREADY_OPEN, "Server socket already open")
-}
-
-/**
- * Perform a nonblocking read into buffer.
- */
-func (p *TServerSocket) Read(buf []byte) (int, error) {
-	return 0, NewTTransportException(UNKNOWN_TRANSPORT_EXCEPTION, "TServerSocket.Read([]byte) is not implemented")
-}
-
-/**
- * Perform a nonblocking write of the data in buffer;
- */
-func (p *TServerSocket) Write(buf []byte) (int, error) {
-	return 0, NewTTransportException(UNKNOWN_TRANSPORT_EXCEPTION, "TServerSocket.Write([]byte) is not implemented")
-}
-
-/**
- * Flushes the underlying output stream if not null.
- */
-func (p *TServerSocket) Flush() error {
-	return NewTTransportException(UNKNOWN_TRANSPORT_EXCEPTION, "TServerSocket.Flush() is not implemented")
+	if l, err := net.Listen(p.addr.Network(), p.addr.String()); err != nil {
+		return err
+	} else {
+		p.listener = l
+	}
+	return nil
 }
 
 func (p *TServerSocket) Addr() net.Addr {
 	return p.addr
 }
 
-func (p *TServerSocket) Peek() bool {
-	return p.IsOpen()
-}
-
-/**
- * Closes the socket.
- */
-func (p *TServerSocket) Close() (err error) {
-	if p.IsOpen() {
-		err := p.listener.Close()
-		if err != nil {
-			return NewTTransportExceptionFromError(err)
-		}
+func (p *TServerSocket) Close() error {
+	defer func() {
 		p.listener = nil
-	}
-	if p.conn != nil {
-		err := p.conn.Close()
-		if err != nil {
-			return NewTTransportExceptionFromError(err)
-		}
-		p.conn = nil
+	}()
+	if p.IsListening() {
+		return p.listener.Close()
 	}
 	return nil
 }
 
 func (p *TServerSocket) Interrupt() error {
-	// TODO(pomack) fix Interrupt as it is probably not right
-	return NewTTransportExceptionFromError(p.Close())
+	p.interrupted = true
+	return nil
 }
