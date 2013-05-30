@@ -406,7 +406,7 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		if !iok || !jok {
 			return 0, false
 		}
-		if cmp := CompareString(si.ThriftName(), sj.ThriftName()); cmp != 0 {
+		if cmp := compareString(si.ThriftName(), sj.ThriftName()); cmp != 0 {
 			return cmp, true
 		}
 		if cmp, ok := si.TStructFields().CompareTo(sj.TStructFields()); !ok || cmp != 0 {
@@ -428,14 +428,14 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		}
 		ki := mi.KeyType()
 		if kj := mj.KeyType(); ki != kj {
-			return CompareInt(int(ki), int(kj)), true
+			return compareInt(int(ki), int(kj)), true
 		}
 		vi := mi.ValueType()
 		if vj := mj.ValueType(); vi != vj {
-			return CompareInt(int(vi), int(vj)), true
+			return compareInt(int(vi), int(vj)), true
 		}
 		if size := mi.Len(); size != mj.Len() {
-			return CompareInt(size, mj.Len()), true
+			return compareInt(size, mj.Len()), true
 		}
 		if c, cok := ki.CompareValueArrays(mi.Keys(), mj.Keys()); c != 0 || !cok {
 			return c, cok
@@ -450,11 +450,11 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		ei := li.ElemType()
 		ej := lj.ElemType()
 		if ei != ej {
-			return CompareInt(int(ei), int(ej)), true
+			return compareInt(int(ei), int(ej)), true
 		}
 		size := li.Len()
 		if size != lj.Len() {
-			return CompareInt(size, lj.Len()), true
+			return compareInt(size, lj.Len()), true
 		}
 		for k := 0; k < size; k++ {
 			vi := li.At(k)
@@ -474,11 +474,11 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 		ei := li.ElemType()
 		ej := lj.ElemType()
 		if ei != ej {
-			return CompareInt(int(ei), int(ej)), true
+			return compareInt(int(ei), int(ej)), true
 		}
 		size := li.Len()
 		if size != lj.Len() {
-			return CompareInt(size, lj.Len()), true
+			return compareInt(size, lj.Len()), true
 		}
 		return ei.CompareValueArrays(li.Values(), lj.Values())
 	default:
@@ -489,7 +489,7 @@ func (p TType) Compare(i, j interface{}) (int, bool) {
 
 func (p TType) CompareValueArrays(li, lj []interface{}) (int, bool) {
 	size := len(li)
-	if cmp := CompareInt(size, len(lj)); cmp != 0 {
+	if cmp := compareInt(size, len(lj)); cmp != 0 {
 		return cmp, true
 	}
 	for i := 0; i < size; i++ {

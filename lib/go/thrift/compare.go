@@ -19,7 +19,7 @@
 
 package thrift
 
-func CompareInt(i, j int) int {
+func compareInt(i, j int) int {
 	if i > j {
 		return 1
 	}
@@ -29,7 +29,7 @@ func CompareInt(i, j int) int {
 	return 0
 }
 
-func CompareInt16(i, j int16) int {
+func compareInt16(i, j int16) int {
 	if i > j {
 		return 1
 	}
@@ -39,7 +39,7 @@ func CompareInt16(i, j int16) int {
 	return 0
 }
 
-func CompareInt32(i, j int32) int {
+func compareInt32(i, j int32) int {
 	if i > j {
 		return 1
 	}
@@ -49,7 +49,7 @@ func CompareInt32(i, j int32) int {
 	return 0
 }
 
-func CompareInt64(i, j int32) int {
+func compareInt64(i, j int32) int {
 	if i > j {
 		return 1
 	}
@@ -59,20 +59,20 @@ func CompareInt64(i, j int32) int {
 	return 0
 }
 
-func CompareStringArray(i, j []string) int {
-	if cmp := CompareInt(len(i), len(j)); cmp != 0 {
+func compareStringArray(i, j []string) int {
+	if cmp := compareInt(len(i), len(j)); cmp != 0 {
 		return cmp
 	}
 	size := len(i)
 	for k := 0; k < size; k++ {
-		if cmp := CompareString(i[k], j[k]); cmp != 0 {
+		if cmp := compareString(i[k], j[k]); cmp != 0 {
 			return cmp
 		}
 	}
 	return 0
 }
 
-func CompareString(i, j string) int {
+func compareString(i, j string) int {
 	if i > j {
 		return 1
 	}
@@ -82,7 +82,7 @@ func CompareString(i, j string) int {
 	return 0
 }
 
-func CompareFloat(i, j float32) int {
+func compareFloat(i, j float32) int {
 	if i > j {
 		return 1
 	}
@@ -92,7 +92,7 @@ func CompareFloat(i, j float32) int {
 	return 0
 }
 
-func CompareDouble(i, j float64) int {
+func compareDouble(i, j float64) int {
 	if i > j {
 		return 1
 	}
@@ -102,7 +102,7 @@ func CompareDouble(i, j float64) int {
 	return 0
 }
 
-func CompareByte(i, j byte) int {
+func compareByte(i, j byte) int {
 	if i > j {
 		return 1
 	}
@@ -112,7 +112,7 @@ func CompareByte(i, j byte) int {
 	return 0
 }
 
-func CompareBool(i, j bool) int {
+func compareBool(i, j bool) int {
 	if i {
 		if j {
 			return 0

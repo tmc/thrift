@@ -84,12 +84,12 @@ func (p *tField) CompareTo(other interface{}) (int, bool) {
 	}
 	if data, ok := other.(TField); ok {
 		if p.Id() != data.Id() {
-			return CompareInt(p.Id(), data.Id()), true
+			return compareInt(p.Id(), data.Id()), true
 		}
 		if p.TypeId() != data.TypeId() {
-			return CompareByte(byte(p.TypeId()), byte(data.TypeId())), true
+			return compareByte(byte(p.TypeId()), byte(data.TypeId())), true
 		}
-		return CompareString(p.Name(), data.Name()), true
+		return compareString(p.Name(), data.Name()), true
 	}
 	return 0, false
 }
@@ -250,7 +250,7 @@ func (p *tFieldContainer) CompareTo(other interface{}) (int, bool) {
 		if ok2 && p == cont {
 			return 0, true
 		}
-		if cmp := CompareInt(p.Len(), data.Len()); cmp != 0 {
+		if cmp := compareInt(p.Len(), data.Len()); cmp != 0 {
 			return cmp, true
 		}
 		for _, field := range p.fields {

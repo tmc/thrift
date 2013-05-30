@@ -156,13 +156,13 @@ func init() {
 	json_nonbase_map_elem_bytes = []byte{']', ',', '['}
 }
 
-func JsonQuote(s string) string {
+func jsonQuote(s string) string {
 	b, _ := json.Marshal(s)
 	s1 := string(b)
 	return s1
 }
 
-func JsonUnquote(s string) (string, bool) {
+func jsonUnquote(s string) (string, bool) {
 	s1 := new(string)
 	err := json.Unmarshal([]byte(s), s1)
 	return *s1, err == nil
@@ -598,7 +598,7 @@ func (p *TSimpleJSONProtocol) OutputBool(value bool) TProtocolException {
 	}
 	switch _ParseContext(p.dumpContext[len(p.dumpContext)-1]) {
 	case _CONTEXT_IN_OBJECT_FIRST, _CONTEXT_IN_OBJECT_NEXT_KEY:
-		v = JsonQuote(v)
+		v = jsonQuote(v)
 	default:
 	}
 	if e := p.OutputStringData(v); e != nil {
@@ -649,7 +649,7 @@ func (p *TSimpleJSONProtocol) OutputI64(value int64) TProtocolException {
 	v := strconv.FormatInt(value, 10)
 	switch _ParseContext(p.dumpContext[len(p.dumpContext)-1]) {
 	case _CONTEXT_IN_OBJECT_FIRST, _CONTEXT_IN_OBJECT_NEXT_KEY:
-		v = JsonQuote(v)
+		v = jsonQuote(v)
 	default:
 	}
 	if e := p.OutputStringData(v); e != nil {
@@ -662,7 +662,7 @@ func (p *TSimpleJSONProtocol) OutputString(s string) TProtocolException {
 	if e := p.OutputPreValue(); e != nil {
 		return e
 	}
-	if e := p.OutputStringData(JsonQuote(s)); e != nil {
+	if e := p.OutputStringData(jsonQuote(s)); e != nil {
 		return e
 	}
 	return p.OutputPostValue()
@@ -844,7 +844,7 @@ func (p *TSimpleJSONProtocol) ParseStringBody() (string, TProtocolException) {
 		}
 	}
 	if i&0x01 == 1 {
-		v, ok := JsonUnquote(string(JSON_QUOTE) + line)
+		v, ok := jsonUnquote(string(JSON_QUOTE) + line)
 		if !ok {
 			return "", NewTProtocolExceptionFromError(err)
 		}
@@ -855,7 +855,7 @@ func (p *TSimpleJSONProtocol) ParseStringBody() (string, TProtocolException) {
 		return "", NewTProtocolExceptionFromError(err)
 	}
 	str := string(JSON_QUOTE) + line + s
-	v, ok := JsonUnquote(str)
+	v, ok := jsonUnquote(str)
 	if !ok {
 		return "", NewTProtocolException(INVALID_DATA, "Unable to parse as JSON string "+str)
 	}
