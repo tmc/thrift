@@ -1760,7 +1760,7 @@ void t_go_generator::generate_service_client(t_service* tservice)
                        indent() << "  return" << endl <<
                        indent() << "}" << endl <<
                        indent() << "if mTypeId == thrift.EXCEPTION {" << endl <<
-                       indent() << "  " << error << " := thrift.NewTApplicationExceptionDefault()" << endl <<
+                       indent() << "  " << error << " := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, \"Unknown Exception\")" << endl <<
                        indent() << "  var " << error2 << " error" << endl <<
                        indent() << "  " << error2 << ", err = " << error << ".Read(iprot)" << endl <<
                        indent() << "  if err != nil {" << endl <<

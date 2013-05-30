@@ -175,7 +175,7 @@ func (p *TBinaryProtocol) WriteBool(value bool) TProtocolException {
 func (p *TBinaryProtocol) WriteByte(value byte) TProtocolException {
 	v := []byte{value}
 	_, e := p.trans.Write(v)
-	return NewTProtocolExceptionFromError(e)
+	return newTProtocolExceptionFromError(e)
 }
 
 func (p *TBinaryProtocol) WriteI16(value int16) TProtocolException {
@@ -183,7 +183,7 @@ func (p *TBinaryProtocol) WriteI16(value int16) TProtocolException {
 	l := byte(0xff & value)
 	v := []byte{h, l}
 	_, e := p.trans.Write(v)
-	return NewTProtocolExceptionFromError(e)
+	return newTProtocolExceptionFromError(e)
 }
 
 func (p *TBinaryProtocol) WriteI32(value int32) TProtocolException {
@@ -193,7 +193,7 @@ func (p *TBinaryProtocol) WriteI32(value int32) TProtocolException {
 	d := byte(0xff & value)
 	v := []byte{a, b, c, d}
 	_, e := p.trans.Write(v)
-	return NewTProtocolExceptionFromError(e)
+	return newTProtocolExceptionFromError(e)
 }
 
 func (p *TBinaryProtocol) WriteI64(value int64) TProtocolException {
@@ -207,7 +207,7 @@ func (p *TBinaryProtocol) WriteI64(value int64) TProtocolException {
 	h := byte(0xff & value)
 	v := []byte{a, b, c, d, e, f, g, h}
 	_, err := p.trans.Write(v)
-	return NewTProtocolExceptionFromError(err)
+	return newTProtocolExceptionFromError(err)
 }
 
 func (p *TBinaryProtocol) WriteDouble(value float64) TProtocolException {
@@ -224,7 +224,7 @@ func (p *TBinaryProtocol) WriteBinary(value []byte) TProtocolException {
 		return e
 	}
 	_, err := p.trans.Write(value)
-	return NewTProtocolExceptionFromError(err)
+	return newTProtocolExceptionFromError(err)
 }
 
 func (p *TBinaryProtocol) WriteBinaryFromReader(reader io.Reader, size int) TProtocolException {
@@ -233,7 +233,7 @@ func (p *TBinaryProtocol) WriteBinaryFromReader(reader io.Reader, size int) TPro
 		return e
 	}
 	_, err := io.CopyN(p.trans, reader, int64(size))
-	return NewTProtocolExceptionFromError(err)
+	return newTProtocolExceptionFromError(err)
 }
 
 /**
@@ -243,7 +243,7 @@ func (p *TBinaryProtocol) WriteBinaryFromReader(reader io.Reader, size int) TPro
 func (p *TBinaryProtocol) ReadMessageBegin() (name string, typeId TMessageType, seqId int32, err TProtocolException) {
 	size, e := p.ReadI32()
 	if e != nil {
-		return "", typeId, 0, NewTProtocolExceptionFromError(e)
+		return "", typeId, 0, newTProtocolExceptionFromError(e)
 	}
 	if size < 0 {
 		typeId = TMessageType(size & 0x0ff)
@@ -253,11 +253,11 @@ func (p *TBinaryProtocol) ReadMessageBegin() (name string, typeId TMessageType, 
 		}
 		name, e = p.ReadString()
 		if e != nil {
-			return name, typeId, seqId, NewTProtocolExceptionFromError(e)
+			return name, typeId, seqId, newTProtocolExceptionFromError(e)
 		}
 		seqId, e = p.ReadI32()
 		if e != nil {
-			return name, typeId, seqId, NewTProtocolExceptionFromError(e)
+			return name, typeId, seqId, newTProtocolExceptionFromError(e)
 		}
 		return name, typeId, seqId, nil
 	}
@@ -311,20 +311,20 @@ func (p *TBinaryProtocol) ReadFieldEnd() TProtocolException {
 func (p *TBinaryProtocol) ReadMapBegin() (kType, vType TType, size int, err TProtocolException) {
 	k, e := p.ReadByte()
 	if e != nil {
-		err = NewTProtocolExceptionFromError(e)
+		err = newTProtocolExceptionFromError(e)
 		return
 	}
 	kType = TType(k)
 	v, e := p.ReadByte()
 	if e != nil {
-		err = NewTProtocolExceptionFromError(e)
+		err = newTProtocolExceptionFromError(e)
 		return
 	}
 	vType = TType(v)
 	size32, e := p.ReadI32()
 	size = int(size32)
 	if e != nil {
-		err = NewTProtocolExceptionFromError(e)
+		err = newTProtocolExceptionFromError(e)
 		return
 	}
 	return kType, vType, size, nil
@@ -337,14 +337,14 @@ func (p *TBinaryProtocol) ReadMapEnd() TProtocolException {
 func (p *TBinaryProtocol) ReadListBegin() (elemType TType, size int, err TProtocolException) {
 	b, e := p.ReadByte()
 	if e != nil {
-		err = NewTProtocolExceptionFromError(e)
+		err = newTProtocolExceptionFromError(e)
 		return
 	}
 	elemType = TType(b)
 	size32, e := p.ReadI32()
 	size = int(size32)
 	if e != nil {
-		err = NewTProtocolExceptionFromError(e)
+		err = newTProtocolExceptionFromError(e)
 		return
 	}
 	return elemType, size, nil
@@ -357,14 +357,14 @@ func (p *TBinaryProtocol) ReadListEnd() TProtocolException {
 func (p *TBinaryProtocol) ReadSetBegin() (elemType TType, size int, err TProtocolException) {
 	b, e := p.ReadByte()
 	if e != nil {
-		err = NewTProtocolExceptionFromError(e)
+		err = newTProtocolExceptionFromError(e)
 		return
 	}
 	elemType = TType(b)
 	size32, e := p.ReadI32()
 	size = int(size32)
 	if e != nil {
-		err = NewTProtocolExceptionFromError(e)
+		err = newTProtocolExceptionFromError(e)
 		return
 	}
 	return elemType, size, nil
@@ -436,11 +436,11 @@ func (p *TBinaryProtocol) ReadBinary() ([]byte, TProtocolException) {
 	}
 	buf := make([]byte, isize)
 	_, err := io.ReadFull(p.trans, buf)
-	return buf, NewTProtocolExceptionFromError(err)
+	return buf, newTProtocolExceptionFromError(err)
 }
 
 func (p *TBinaryProtocol) Flush() (err TProtocolException) {
-	return NewTProtocolExceptionFromError(p.trans.Flush())
+	return newTProtocolExceptionFromError(p.trans.Flush())
 }
 
 func (p *TBinaryProtocol) Skip(fieldType TType) (err TProtocolException) {
@@ -456,7 +456,7 @@ func (p *TBinaryProtocol) readAll(buf []byte) TProtocolException {
 		return e
 	}
 	_, err := io.ReadFull(p.trans, buf)
-	return NewTProtocolExceptionFromError(err)
+	return newTProtocolExceptionFromError(err)
 }
 
 func (p *TBinaryProtocol) setReadLength(readLength int) {
@@ -484,5 +484,5 @@ func (p *TBinaryProtocol) readStringBody(size int) (value string, err TProtocolE
 	isize := int(size)
 	buf := make([]byte, isize)
 	_, e := io.ReadFull(p.trans, buf)
-	return string(buf), NewTProtocolExceptionFromError(e)
+	return string(buf), newTProtocolExceptionFromError(e)
 }

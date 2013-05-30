@@ -1053,7 +1053,7 @@ func (p *CalculatorClient) RecvCalculate() (value int32, ouch *InvalidOperation,
 		return
 	}
 	if mTypeId == EXCEPTION {
-		error33 := NewTApplicationExceptionDefault()
+		error33 := NewTApplicationException(UNKNOWN_APPLICATION_EXCEPTION, "")
 		error34, er := error33.Read(iprot)
 		if er != nil {
 			err = er

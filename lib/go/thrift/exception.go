@@ -19,34 +19,7 @@
 
 package thrift
 
-import ()
-
-// Generic exception class for Thrift.
-//
-
+// Generic Thrift exception
 type TException interface {
-	Error() string
-}
-
-type tException struct {
-	message string
-}
-
-func (p *tException) Error() string {
-	return p.message
-}
-
-func NewTException(m string) TException {
-	return &tException{message: m}
-}
-
-func NewTExceptionFromError(e error) TException {
-	if e == nil {
-		return nil
-	}
-	t, ok := e.(TException)
-	if ok {
-		return t
-	}
-	return NewTException(e.Error())
+	error
 }

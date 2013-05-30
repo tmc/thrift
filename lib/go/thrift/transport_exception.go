@@ -23,7 +23,7 @@ import (
 	"io"
 )
 
-// Transport exceptions.
+// Thrift Transport exception
 type TTransportException interface {
 	TException
 	TypeId() int
@@ -50,18 +50,6 @@ func (p *tTransportException) Error() string {
 	return p.message
 }
 
-func NewTTransportExceptionDefault() TTransportException {
-	return NewTTransportExceptionDefaultType(UNKNOWN_TRANSPORT_EXCEPTION)
-}
-
-func NewTTransportExceptionDefaultType(t int) TTransportException {
-	return NewTTransportException(t, "")
-}
-
-func NewTTransportExceptionDefaultString(m string) TTransportException {
-	return NewTTransportException(UNKNOWN_TRANSPORT_EXCEPTION, m)
-}
-
 func NewTTransportException(t int, m string) TTransportException {
 	return &tTransportException{typeId: t, message: m}
 }
@@ -70,12 +58,11 @@ func NewTTransportExceptionFromError(e error) TTransportException {
 	if e == nil {
 		return nil
 	}
-	t, ok := e.(TTransportException)
-	if ok {
+	if t, ok := e.(TTransportException); ok {
 		return t
 	}
 	if e == io.EOF {
 		return NewTTransportException(END_OF_FILE, e.Error())
 	}
-	return NewTTransportExceptionDefaultString(e.Error())
+	return NewTTransportException(UNKNOWN_TRANSPORT_EXCEPTION, e.Error())
 }

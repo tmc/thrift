@@ -34,7 +34,7 @@ const (
 	PROTOCOL_ERROR                 = 7
 )
 
-// Application level exception
+// Application level Thrift exception
 type TApplicationException interface {
 	TException
 	TypeId() int32
@@ -43,24 +43,16 @@ type TApplicationException interface {
 }
 
 type tApplicationException struct {
-	TException
-	type_ int32
+	message string
+	type_   int32
 }
 
-func NewTApplicationExceptionDefault() TApplicationException {
-	return NewTApplicationException(UNKNOWN_APPLICATION_EXCEPTION, "UNKNOWN")
-}
-
-func NewTApplicationExceptionType(type_ int32) TApplicationException {
-	return NewTApplicationException(type_, "UNKNOWN")
+func (e tApplicationException) Error() string {
+	return e.message
 }
 
 func NewTApplicationException(type_ int32, message string) TApplicationException {
-	return &tApplicationException{TException: NewTException(message), type_: type_}
-}
-
-func NewTApplicationExceptionMessage(message string) TApplicationException {
-	return NewTApplicationException(UNKNOWN_APPLICATION_EXCEPTION, message)
+	return &tApplicationException{message, type_}
 }
 
 func (p *tApplicationException) TypeId() int32 {

@@ -23,7 +23,7 @@ import (
 	"encoding/base64"
 )
 
-// Protocol exceptions.
+// Thrift Protocol exception
 type TProtocolException interface {
 	TException
 	TypeId() int
@@ -53,18 +53,6 @@ func (p *tProtocolException) String() string {
 
 func (p *tProtocolException) Error() string {
 	return p.message
-}
-
-func NewTProtocolExceptionDefault() TProtocolException {
-	return NewTProtocolExceptionDefaultType(UNKNOWN_PROTOCOL_EXCEPTION)
-}
-
-func NewTProtocolExceptionDefaultType(t int) TProtocolException {
-	return NewTProtocolException(t, "")
-}
-
-func NewTProtocolExceptionDefaultString(m string) TProtocolException {
-	return NewTProtocolException(UNKNOWN_PROTOCOL_EXCEPTION, m)
 }
 
 func NewTProtocolException(t int, m string) TProtocolException {
@@ -103,28 +91,15 @@ func NewTProtocolExceptionWriteStruct(structName string, e TProtocolException) T
 	return NewTProtocolException(t, "Unable to write struct "+structName+" due to: "+e.Error())
 }
 
-func NewTProtocolExceptionFromError(e error) TProtocolException {
+func newTProtocolExceptionFromError(e error) TProtocolException {
 	if e == nil {
 		return nil
 	}
 	if t, ok := e.(TProtocolException); ok {
 		return t
-	}
-	if te, ok := e.(TTransportException); ok {
-		return NewTProtocolExceptionFromTransportException(te)
 	}
 	if _, ok := e.(base64.CorruptInputError); ok {
 		return NewTProtocolException(INVALID_DATA, e.Error())
 	}
-	return NewTProtocolExceptionDefaultString(e.Error())
-}
-
-func NewTProtocolExceptionFromTransportException(e TTransportException) TProtocolException {
-	if e == nil {
-		return nil
-	}
-	if t, ok := e.(TProtocolException); ok {
-		return t
-	}
-	return NewTProtocolExceptionDefaultString(e.Error())
+	return &tProtocolException{UNKNOWN_PROTOCOL_EXCEPTION, e.Error()}
 }
