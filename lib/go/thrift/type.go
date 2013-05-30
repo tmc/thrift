@@ -25,9 +25,7 @@ import (
 	"strconv"
 )
 
-/**
- * Type constants in the Thrift protocol.
- */
+// Type constants in the Thrift protocol.
 type TType byte
 
 const (

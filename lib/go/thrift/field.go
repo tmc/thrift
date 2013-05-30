@@ -23,10 +23,7 @@ import (
 	"sort"
 )
 
-/**
- * Helper class that encapsulates field metadata.
- *
- */
+// Helper class that encapsulates field metadata.
 type TField interface {
 	Name() string
 	TypeId() TType

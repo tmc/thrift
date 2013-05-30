@@ -30,21 +30,17 @@ const (
 
 // for references to _ParseContext see tsimplejson_protocol.go
 
-/**
- * JSON protocol implementation for thrift.
- *
- * This protocol produces/consumes a simple output format
- * suitable for parsing by scripting languages.  It should not be
- * confused with the full-featured TJSONProtocol.
- *
- */
+// JSON protocol implementation for thrift.
+//
+// This protocol produces/consumes a simple output format
+// suitable for parsing by scripting languages.  It should not be
+// confused with the full-featured TJSONProtocol.
+//
 type TJSONProtocol struct {
 	*TSimpleJSONProtocol
 }
 
-/**
- * Constructor
- */
+// Constructor
 func NewTJSONProtocol(t TTransport) *TJSONProtocol {
 	v := &TJSONProtocol{TSimpleJSONProtocol: NewTSimpleJSONProtocol(t)}
 	v.parseContextStack = append(v.parseContextStack, int(_CONTEXT_IN_TOPLEVEL))
@@ -52,9 +48,7 @@ func NewTJSONProtocol(t TTransport) *TJSONProtocol {
 	return v
 }
 
-/**
- * Factory
- */
+// Factory
 type TJSONProtocolFactory struct{}
 
 func (p *TJSONProtocolFactory) GetProtocol(trans TTransport) TProtocol {
@@ -197,9 +191,7 @@ func (p *TJSONProtocol) WriteBinary(v []byte) TProtocolException {
 	return p.OutputPostValue()
 }
 
-/**
- * Reading methods.
- */
+// Reading methods.
 
 func (p *TJSONProtocol) ReadMessageBegin() (name string, typeId TMessageType, seqId int32, err TProtocolException) {
 	if isNull, err := p.ParseListBegin(); isNull || err != nil {

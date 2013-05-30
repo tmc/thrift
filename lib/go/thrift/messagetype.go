@@ -19,10 +19,7 @@
 
 package thrift
 
-/**
- * Message type constants in the Thrift protocol.
- *
- */
+// Message type constants in the Thrift protocol.
 type TMessageType int32
 
 const (

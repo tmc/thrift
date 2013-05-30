@@ -60,14 +60,12 @@ func (p _ParseContext) String() string {
 	return "UNKNOWN-PARSE-CONTEXT"
 }
 
-/**
- * JSON protocol implementation for thrift.
- *
- * This protocol produces/consumes a simple output format
- * suitable for parsing by scripting languages.  It should not be
- * confused with the full-featured TJSONProtocol.
- *
- */
+// JSON protocol implementation for thrift.
+//
+// This protocol produces/consumes a simple output format
+// suitable for parsing by scripting languages.  It should not be
+// confused with the full-featured TJSONProtocol.
+//
 type TSimpleJSONProtocol struct {
 	//TProtocolBase;
 	trans TTransport
@@ -88,9 +86,7 @@ type TSimpleJSONProtocol struct {
 	reader *bufio.Reader
 }
 
-/**
- * Constructor
- */
+// Constructor
 func NewTSimpleJSONProtocol(t TTransport) *TSimpleJSONProtocol {
 	v := &TSimpleJSONProtocol{trans: t,
 		writer: t,
@@ -101,9 +97,7 @@ func NewTSimpleJSONProtocol(t TTransport) *TSimpleJSONProtocol {
 	return v
 }
 
-/**
- * Factory
- */
+// Factory
 type TSimpleJSONProtocolFactory struct{}
 
 func (p *TSimpleJSONProtocolFactory) GetProtocol(trans TTransport) TProtocol {
@@ -298,9 +292,7 @@ func (p *TSimpleJSONProtocol) WriteBinary(v []byte) TProtocolException {
 	return p.OutputPostValue()
 }
 
-/**
- * Reading methods.
- */
+// Reading methods.
 
 func (p *TSimpleJSONProtocol) ReadMessageBegin() (name string, typeId TMessageType, seqId int32, err TProtocolException) {
 	if isNull, err := p.ParseListBegin(); isNull || err != nil {

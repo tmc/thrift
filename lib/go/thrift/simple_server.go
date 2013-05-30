@@ -19,10 +19,7 @@
 
 package thrift
 
-/**
- * Simple singlethreaded server for testing.
- *
- */
+// Simple, non-concurrent server for testing.
 type TSimpleServer struct {
 	stopped bool
 
@@ -150,7 +147,6 @@ func (p *TSimpleServer) processRequest(client TTransport) {
 		ok, e := processor.Process(inputProtocol, outputProtocol)
 		if e != nil {
 			if !p.stopped {
-				// TODO(pomack) log error
 				break
 			}
 		}

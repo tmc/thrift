@@ -19,25 +19,17 @@
 
 package thrift
 
-/**
- * Factory class used to create wrapped instance of Transports.
- * This is used primarily in servers, which get Transports from
- * a ServerTransport and then may want to mutate them (i.e. create
- * a BufferedTransport from the underlying base transport)
- *
- */
+// Factory class used to create wrapped instance of Transports.
+// This is used primarily in servers, which get Transports from
+// a ServerTransport and then may want to mutate them (i.e. create
+// a BufferedTransport from the underlying base transport)
 type TTransportFactory interface {
 	GetTransport(trans TTransport) TTransport
 }
 
 type tTransportFactory struct{}
 
-/**
- * Return a wrapped instance of the base Transport.
- *
- * @param trans The base transport
- * @return Wrapped Transport
- */
+// Return a wrapped instance of the base Transport.
 func (p *tTransportFactory) GetTransport(trans TTransport) TTransport {
 	return trans
 }

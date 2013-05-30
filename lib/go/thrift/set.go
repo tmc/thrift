@@ -24,11 +24,9 @@ import (
 	"container/list"
 )
 
-/**
- * Helper class that encapsulates set metadata.
- *
- * Note that sets of structs requires pointers, not struct values.
- */
+// Helper class that encapsulates set metadata.
+//
+// Note that sets of structs requires pointers, not struct values.
 type TSet interface {
 	TContainer
 	ElemType() TType

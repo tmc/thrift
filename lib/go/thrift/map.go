@@ -25,10 +25,7 @@ import (
 	"reflect"
 )
 
-/**
- * Helper class that encapsulates map metadata.
- *
- */
+// Helper class that encapsulates map metadata.
 type TMap interface {
 	KeyType() TType
 	ValueType() TType

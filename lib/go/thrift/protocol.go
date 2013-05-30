@@ -24,8 +24,6 @@ const (
 	VERSION_1    = 0x80010000
 )
 
-type EmptyInterface interface{}
-
 type TProtocol interface {
 	WriteMessageBegin(name string, typeId TMessageType, seqid int32) TProtocolException
 	WriteMessageEnd() TProtocolException
@@ -76,47 +74,15 @@ type TProtocol interface {
 	Transport() TTransport
 }
 
-/**
- * The maximum recursive depth the skip() function will traverse before
- * throwing a TException.
- */
-var (
-	MaxSkipDepth = 1<<31 - 1
-)
+// The maximum recursive depth the skip() function will traverse
+var MaxSkipDepth = 1<<31 - 1
 
-/**
- * Specifies the maximum recursive depth that the skip function will
- * traverse before throwing a TException.  This is a global setting, so
- * any call to skip in this JVM will enforce this value.
- *
- * @param depth  the maximum recursive depth.  A value of 2 would allow
- *    the skip function to skip a structure or collection with basic children,
- *    but it would not permit skipping a struct that had a field containing
- *    a child struct.  A value of 1 would only allow skipping of simple
- *    types and empty structs/collections.
- */
-func SetMaxSkipDepth(depth int) {
-	MaxSkipDepth = depth
-}
-
-/**
- * Skips over the next data element from the provided input TProtocol object.
- *
- * @param prot  the protocol object to read from
- * @param type  the next value will be intepreted as this TType value.
- */
+// Skips over the next data element from the provided input TProtocol object.
 func SkipDefaultDepth(prot TProtocol, typeId TType) (err TProtocolException) {
 	return Skip(prot, typeId, MaxSkipDepth)
 }
 
-/**
- * Skips over the next data element from the provided input TProtocol object.
- *
- * @param prot  the protocol object to read from
- * @param type  the next value will be intepreted as this TType value.
- * @param maxDepth  this function will only skip complex objects to this
- *   recursive depth, to prevent Java stack overflow.
- */
+// Skips over the next data element from the provided input TProtocol object.
 func Skip(self TProtocol, fieldType TType, maxDepth int) (err TProtocolException) {
 	switch fieldType {
 	case STOP:
@@ -143,58 +109,46 @@ func Skip(self TProtocol, fieldType TType, maxDepth int) (err TProtocolException
 		_, err = self.ReadString()
 		return
 	case STRUCT:
-		{
-			_, err = self.ReadStructBegin()
-			if err != nil {
-				return
-			}
-			for {
-				_, typeId, _, _ := self.ReadFieldBegin()
-				if typeId == STOP {
-					break
-				}
-				Skip(self, typeId, maxDepth-1)
-				self.ReadFieldEnd()
-			}
-			return self.ReadStructEnd()
+		if _, err = self.ReadStructBegin(); err != nil {
+			return err
 		}
+		for {
+			_, typeId, _, _ := self.ReadFieldBegin()
+			if typeId == STOP {
+				break
+			}
+			Skip(self, typeId, maxDepth-1)
+			self.ReadFieldEnd()
+		}
+		return self.ReadStructEnd()
 	case MAP:
-		{
-			keyType, valueType, l, err := self.ReadMapBegin()
-			if err != nil {
-				return err
-			}
-			size := int(l)
-			for i := 0; i < size; i++ {
-				Skip(self, keyType, maxDepth-1)
-				self.Skip(valueType)
-			}
-			return self.ReadMapEnd()
+		keyType, valueType, size, err := self.ReadMapBegin()
+		if err != nil {
+			return err
 		}
+		for i := 0; i < size; i++ {
+			Skip(self, keyType, maxDepth-1)
+			self.Skip(valueType)
+		}
+		return self.ReadMapEnd()
 	case SET:
-		{
-			elemType, l, err := self.ReadSetBegin()
-			if err != nil {
-				return err
-			}
-			size := int(l)
-			for i := 0; i < size; i++ {
-				Skip(self, elemType, maxDepth-1)
-			}
-			return self.ReadSetEnd()
+		elemType, size, err := self.ReadSetBegin()
+		if err != nil {
+			return err
 		}
+		for i := 0; i < size; i++ {
+			Skip(self, elemType, maxDepth-1)
+		}
+		return self.ReadSetEnd()
 	case LIST:
-		{
-			elemType, l, err := self.ReadListBegin()
-			if err != nil {
-				return err
-			}
-			size := int(l)
-			for i := 0; i < size; i++ {
-				Skip(self, elemType, maxDepth-1)
-			}
-			return self.ReadListEnd()
+		elemType, size, err := self.ReadListBegin()
+		if err != nil {
+			return err
 		}
+		for i := 0; i < size; i++ {
+			Skip(self, elemType, maxDepth-1)
+		}
+		return self.ReadListEnd()
 	}
 	return nil
 }

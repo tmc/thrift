@@ -21,10 +21,8 @@ package thrift
 
 import ()
 
-/**
- * Generic exception class for Thrift.
- *
- */
+// Generic exception class for Thrift.
+//
 
 type TException interface {
 	Error() string

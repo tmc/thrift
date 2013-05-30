@@ -19,10 +19,7 @@
 
 package thrift
 
-/**
- * Helper class that encapsulates struct metadata.
- *
- */
+// Helper class that encapsulates struct metadata.
 type TStruct interface {
 	TFieldContainer
 	TStructName() string

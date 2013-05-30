@@ -25,10 +25,10 @@ import (
 )
 
 type TServerSocket struct {
-	listener          net.Listener
-	addr              net.Addr
+	listener      net.Listener
+	addr          net.Addr
 	clientTimeout time.Duration
-	interrupted       bool
+	interrupted   bool
 }
 
 func NewTServerSocket(listenAddr string) (*TServerSocket, error) {
@@ -47,12 +47,12 @@ func (p *TServerSocket) Listen() error {
 	if p.IsListening() {
 		return nil
 	}
-       l, err := net.Listen(p.addr.Network(), p.addr.String())
-       if err != nil {
-              return err
-       }
-       p.listener = l
-       return nil
+	l, err := net.Listen(p.addr.Network(), p.addr.String())
+	if err != nil {
+		return err
+	}
+	p.listener = l
+	return nil
 }
 
 func (p *TServerSocket) Accept() (TTransport, error) {

@@ -21,8 +21,8 @@ package thrift
 
 import (
 	"bytes"
-	"io"
 	"encoding/binary"
+	"io"
 )
 
 type TFramedTransport struct {

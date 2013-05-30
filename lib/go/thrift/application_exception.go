@@ -34,10 +34,7 @@ const (
 	PROTOCOL_ERROR                 = 7
 )
 
-/**
- * Application level exception
- *
- */
+// Application level exception
 type TApplicationException interface {
 	TException
 	TypeId() int32

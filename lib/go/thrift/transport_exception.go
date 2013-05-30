@@ -23,10 +23,7 @@ import (
 	"io"
 )
 
-/**
- * Transport exceptions.
- *
- */
+// Transport exceptions.
 type TTransportException interface {
 	TException
 	TypeId() int

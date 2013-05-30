@@ -19,11 +19,8 @@
 
 package thrift
 
-/**
- * A processor is a generic object which operates upon an input stream and
- * writes to some output stream.
- *
- */
+// A processor is a generic object which operates upon an input stream and
+// writes to some output stream.
 type TProcessor interface {
 	Process(in, out TProtocol) (bool, TException)
 }

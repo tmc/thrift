@@ -542,10 +542,8 @@ func ReadWriteCalculate(t *testing.T, p TProtocol, trans TTransport) {
 	}
 }
 
-/**
- *You can define enums, which are just 32 bit integers. Values are optional
- *and start at 1 if not supplied, C style again.
- */
+//You can define enums, which are just 32 bit integers. Values are optional
+//and start at 1 if not supplied, C style again.
 type Operation int
 
 const (
@@ -591,31 +589,27 @@ func (p Operation) IsEnum() bool {
 	return true
 }
 
-/**
- *Thrift lets you do typedefs to get pretty names for your types. Standard
- *C style here.
- */
+//Thrift lets you do typedefs to get pretty names for your types. Standard
+//C style here.
 type MyInteger int32
 
 const INT32CONSTANT = 9853
 
 var MAPCONSTANT TMap
 
-/**
- * Structs are the basic complex data structures. They are comprised of fields
- * which each have an integer identifier, a type, a symbolic name, and an
- * optional default value.
- *
- * Fields can be declared "optional", which ensures they will not be included
- * in the serialized output if they aren't set.  Note that this requires some
- * manual management in some languages.
- *
- * Attributes:
- *  - Num1
- *  - Num2
- *  - Op
- *  - Comment
- */
+// Structs are the basic complex data structures. They are comprised of fields
+// which each have an integer identifier, a type, a symbolic name, and an
+// optional default value.
+//
+// Fields can be declared "optional", which ensures they will not be included
+// in the serialized output if they aren't set.  Note that this requires some
+// manual management in some languages.
+//
+// Attributes:
+//  - Num1
+//  - Num2
+//  - Op
+//  - Comment
 type Work struct {
 	TStruct
 	_       interface{} "num1"    // nil # 0
@@ -1020,11 +1014,9 @@ func NewCalculatorClientProtocol(t TTransport, iprot TProtocol, oprot TProtocol)
 	}
 }
 
-/**
- * Parameters:
- *  - Logid
- *  - W
- */
+// Parameters:
+//  - Logid
+//  - W
 func (p *CalculatorClient) Calculate(logid int32, w *Work) (retval30 int32, ouch *InvalidOperation, err error) {
 	err = p.SendCalculate(logid, w)
 	if err != nil {
@@ -1083,11 +1075,9 @@ func (p *CalculatorClient) RecvCalculate() (value int32, ouch *InvalidOperation,
 	return
 }
 
-/**
- * Attributes:
- *  - Logid
- *  - W
- */
+// Attributes:
+//  - Logid
+//  - W
 type CalculateArgs struct {
 	TStruct
 	_     interface{} "logid" // nil # 0
@@ -1326,11 +1316,9 @@ func (p *CalculateArgs) TStructFields() TFieldContainer {
 	})
 }
 
-/**
- * Attributes:
- *  - Success
- *  - Ouch
- */
+// Attributes:
+//  - Success
+//  - Ouch
 type CalculateResult struct {
 	TStruct
 	Success int32             "success" // 0
@@ -1568,13 +1556,11 @@ func (p *CalculateResult) TStructFields() TFieldContainer {
 	})
 }
 
-/**
- * Structs can also be exceptions, if they are nasty.
- *
- * Attributes:
- *  - What
- *  - Why
- */
+// Structs can also be exceptions, if they are nasty.
+//
+// Attributes:
+//  - What
+//  - Why
 type InvalidOperation struct {
 	TStruct
 	_    interface{} "what" // nil # 0

@@ -23,10 +23,7 @@ import (
 	"encoding/base64"
 )
 
-/**
- * Protocol exceptions.
- *
- */
+// Protocol exceptions.
 type TProtocolException interface {
 	TException
 	TypeId() int

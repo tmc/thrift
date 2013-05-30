@@ -19,10 +19,8 @@
 
 package thrift
 
-/**
- * The default processor factory just returns a singleton
- * instance.
- */
+// The default processor factory just returns a singleton
+// instance.
 type TProcessorFactory interface {
 	GetProcessor(trans TTransport) TProcessor
 }

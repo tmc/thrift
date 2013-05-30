@@ -23,10 +23,7 @@ import (
 	"bytes"
 )
 
-/**
- * Memory buffer-based implementation of the TTransport interface.
- *
- */
+// Memory buffer-based implementation of the TTransport interface.
 type TMemoryBuffer struct {
 	*bytes.Buffer
 	size int
