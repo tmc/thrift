@@ -19,10 +19,6 @@
 
 package thrift
 
-import (
-	"errors"
-)
-
 const (
 	UNKNOWN_APPLICATION_EXCEPTION  = 0
 	UNKNOWN_METHOD                 = 1
@@ -59,25 +55,19 @@ func (p *tApplicationException) TypeId() int32 {
 	return p.type_
 }
 
-func (p *tApplicationException) Read(iprot TProtocol) (error TApplicationException, err error) {
-	_, err = iprot.ReadStructBegin()
-
-	// this shouldn't be needed
-	er := errors.New("empty")
-	if er == nil {
-		return
-	}
+func (p *tApplicationException) Read(iprot TProtocol) (TApplicationException, error) {
+	_, err := iprot.ReadStructBegin()
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	message := ""
 	type_ := int32(UNKNOWN_APPLICATION_EXCEPTION)
 
 	for {
-		_, ttype, id, er := iprot.ReadFieldBegin()
-		if er != nil {
-			return nil, er
+		_, ttype, id, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return nil, err
 		}
 		if ttype == STOP {
 			break
@@ -85,45 +75,34 @@ func (p *tApplicationException) Read(iprot TProtocol) (error TApplicationExcepti
 		switch id {
 		case 1:
 			if ttype == STRING {
-				message, err = iprot.ReadString()
-				if err != nil {
-					return
+				if message, err = iprot.ReadString(); err != nil {
+					return nil, err
 				}
 			} else {
-				err = SkipDefaultDepth(iprot, ttype)
-				if err != nil {
-					return
+				if err = SkipDefaultDepth(iprot, ttype); err != nil {
+					return nil, err
 				}
 			}
-			break
 		case 2:
 			if ttype == I32 {
-				type_, err = iprot.ReadI32()
-				if err != nil {
-					return
+				if type_, err = iprot.ReadI32(); err != nil {
+					return nil, err
 				}
 			} else {
-				err = SkipDefaultDepth(iprot, ttype)
-				if err != nil {
-					return
+				if err = SkipDefaultDepth(iprot, ttype); err != nil {
+					return nil, err
 				}
 			}
-			break
 		default:
-			err = SkipDefaultDepth(iprot, ttype)
-			if err != nil {
-				return
+			if err = SkipDefaultDepth(iprot, ttype); err != nil {
+				return nil, err
 			}
-			break
 		}
-		err = iprot.ReadFieldEnd()
-		if err != nil {
-			return
+		if err = iprot.ReadFieldEnd(); err != nil {
+			return nil, err
 		}
 	}
-	err = iprot.ReadStructEnd()
-	error = NewTApplicationException(type_, message)
-	return
+	return NewTApplicationException(type_, message), iprot.ReadStructEnd()
 }
 
 func (p *tApplicationException) Write(oprot TProtocol) (err error) {
