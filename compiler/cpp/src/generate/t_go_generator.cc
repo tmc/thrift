@@ -447,7 +447,7 @@ void t_go_generator::init_generator()
 
     while (true) {
         // TODO: Do better error checking here.
-        MKDIR(package_dir_.c_str());
+        MKDIR(underscore(package_dir_).c_str());
 
         if (module.empty()) {
             break;
@@ -481,7 +481,7 @@ void t_go_generator::init_generator()
     vector<t_service*>::iterator sv_iter;
 
     for (sv_iter = services.begin(); sv_iter != services.end(); ++sv_iter) {
-        string service_dir = package_dir_ + "/" + (*sv_iter)->get_name();
+        string service_dir = package_dir_ + "/" + underscore((*sv_iter)->get_name()) + "-remote";
 #ifdef MINGW
         mkdir(service_dir.c_str());
 #else
@@ -1425,7 +1425,7 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
  */
 void t_go_generator::generate_service(t_service* tservice)
 {
-    string f_service_name = package_dir_ + "/" + service_name_ + ".go";
+    string f_service_name = package_dir_ + "/" + underscore(service_name_) + ".go";
     f_service_.open(f_service_name.c_str());
     f_service_ <<
                go_autogen_comment() <<
@@ -1820,7 +1820,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
 {
     vector<t_function*> functions = tservice->get_functions();
     vector<t_function*>::iterator f_iter;
-    string f_remote_name = package_dir_ + "/" + service_name_ + "/" + service_name_ + "-remote.go";
+    string f_remote_name = package_dir_ + "/" + underscore(service_name_) + "-remote/" + underscore(service_name_) + "-remote.go";
     ofstream f_remote;
     f_remote.open(f_remote_name.c_str());
     string service_module = get_real_go_module(program_);
@@ -3078,9 +3078,9 @@ void t_go_generator::generate_go_docstring(ofstream& out,
 
     if (has_doc) {
         generate_docstring_comment(out,
-                                   "/**\n",
-                                   " * ", ss.str(),
-                                   " */\n");
+                                   "",
+                                   "// ", ss.str(),
+                                   "");
     }
 }
 
@@ -3092,9 +3092,9 @@ void t_go_generator::generate_go_docstring(ofstream& out,
 {
     if (tdoc->has_doc()) {
         generate_docstring_comment(out,
-                                   "/**\n",
-                                   " *", tdoc->get_doc(),
-                                   " */\n");
+                                   "",
+                                   "//", tdoc->get_doc(),
+                                   "");
     }
 }
 
