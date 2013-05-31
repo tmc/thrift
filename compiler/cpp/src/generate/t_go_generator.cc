@@ -1847,19 +1847,19 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << ")" << endl <<
              indent() << endl <<
              indent() << "func Usage() {" << endl <<
-             indent() << "  fmt.Fprint(os.Stderr, \"Usage of \", os.Args[0], \" [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]:\\n\")" << endl <<
+             indent() << "  fmt.Fprintln(os.Stderr, \"Usage of \", os.Args[0], \" [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]:\\n\")" << endl <<
              indent() << "  flag.PrintDefaults()" << endl <<
-             indent() << "  fmt.Fprint(os.Stderr, \"Functions:\\n\")" << endl;
+             indent() << "  fmt.Fprintln(os.Stderr, \"Functions:\\n\")" << endl;
 
     for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
         string funcName((*f_iter)->get_name());
         string funcSignature(function_signature_if(*f_iter, "", true));
         f_remote <<
-                 indent() << "  fmt.Fprint(os.Stderr, \"  " << funcName << funcSignature.substr(funcSignature.find("(")) << "\\n\")" << endl;
+                 indent() << "  fmt.Fprintln(os.Stderr, \"  " << funcName << funcSignature.substr(funcSignature.find("(")) << "\\n\")" << endl;
     }
 
     f_remote <<
-             indent() << "  fmt.Fprint(os.Stderr, \"\\n\")" << endl <<
+             indent() << "  fmt.Fprintln(os.Stderr)" << endl <<
              indent() << "  os.Exit(0)" << endl <<
              indent() << "}" << endl <<
              indent() << endl <<
@@ -1894,7 +1894,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "if len(urlString) > 0 {" << endl <<
              indent() << "  parsedUrl, err := url.Parse(urlString)" << endl <<
              indent() << "  if err != nil {" << endl <<
-             indent() << "    fmt.Fprint(os.Stderr, \"Error parsing URL: \", err.Error(), \"\\n\")" << endl <<
+             indent() << "    fmt.Fprintln(os.Stderr, \"Error parsing URL: \", err)" << endl <<
              indent() << "    flag.Usage()" << endl <<
              indent() << "  }" << endl <<
              indent() << "  host = parsedUrl.Host" << endl <<
@@ -1904,7 +1904,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "} else if useHttp {" << endl <<
              indent() << "  _, err := url.Parse(fmt.Sprint(\"http://\", host, \":\", port))" << endl <<
              indent() << "  if err != nil {" << endl <<
-             indent() << "    fmt.Fprint(os.Stderr, \"Error parsing URL: \", err.Error(), \"\\n\")" << endl <<
+             indent() << "    fmt.Fprintln(os.Stderr, \"Error parsing URL: \", err)" << endl <<
              indent() << "    flag.Usage()" << endl <<
              indent() << "  }" << endl <<
              indent() << "}" << endl <<
@@ -1924,7 +1924,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "  }" << endl <<
              indent() << "  trans, err = thrift.NewTSocket(net.JoinHostPort(host, portStr))" << endl <<
              indent() << "  if err != nil {" << endl <<
-             indent() << "    fmt.Fprint(os.Stderr, \"Error resolving address\", err.Error())" << endl <<
+             indent() << "    fmt.Fprintln(os.Stderr, \"error resolving address:\", err)" << endl <<
              indent() << "    os.Exit(1)" << endl <<
              indent() << "  }" << endl <<
              indent() << "  if framed {" << endl <<
@@ -1932,7 +1932,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "  }" << endl <<
              indent() << "}" << endl <<
              indent() << "if err != nil {" << endl <<
-             indent() << "  fmt.Fprint(os.Stderr, \"Error creating transport\", err.Error())" << endl <<
+             indent() << "  fmt.Fprintln(os.Stderr, \"Error creating transport\", err)" << endl <<
              indent() << "  os.Exit(1)" << endl <<
              indent() << "}" << endl <<
              indent() << "defer trans.Close()" << endl <<
@@ -1951,13 +1951,13 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "  protocolFactory = thrift.NewTBinaryProtocolFactoryDefault()" << endl <<
              indent() << "  break" << endl <<
              indent() << "default:" << endl <<
-             indent() << "  fmt.Fprint(os.Stderr, \"Invalid protocol specified: \", protocol, \"\\n\")" << endl <<
+             indent() << "  fmt.Fprintln(os.Stderr, \"Invalid protocol specified: \", protocol)" << endl <<
              indent() << "  Usage()" << endl <<
              indent() << "  os.Exit(1)" << endl <<
              indent() << "}" << endl <<
              indent() << "client := " << package_name_ << ".New" << publicize(service_name_) << "ClientFactory(trans, protocolFactory)" << endl <<
              indent() << "if err = trans.Open(); err != nil {" << endl <<
-             indent() << "  fmt.Fprint(os.Stderr, \"Error opening socket to \", host, \":\", port, \" \", err.Error())" << endl <<
+             indent() << "  fmt.Fprintln(os.Stderr, \"Error opening socket to \", host, \":\", port, \" \", err)" << endl <<
              indent() << "  os.Exit(1)" << endl <<
              indent() << "}" << endl <<
              indent() << endl <<
@@ -1975,7 +1975,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
         indent_up();
         f_remote <<
                  indent() << "if flag.NArg() - 1 != " << num_args << " {" << endl <<
-                 indent() << "  fmt.Fprint(os.Stderr, \"" << escape_string(pubName) << " requires " << num_args << " args\\n\")" << endl <<
+                 indent() << "  fmt.Fprintln(os.Stderr, \"" << escape_string(pubName) << " requires " << num_args << " args\")" << endl <<
                  indent() << "  flag.Usage()" << endl <<
                  indent() << "}" << endl;
 
@@ -2186,7 +2186,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "  Usage()" << endl <<
              indent() << "  break" << endl <<
              indent() << "default:" << endl <<
-             indent() << "  fmt.Fprint(os.Stderr, \"Invalid function \", cmd, \"\\n\")" << endl <<
+             indent() << "  fmt.Fprintln(os.Stderr, \"Invalid function \", cmd)" << endl <<
              indent() << "}" << endl;
     indent_down();
     f_remote <<
