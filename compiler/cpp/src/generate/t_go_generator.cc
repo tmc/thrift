@@ -1852,10 +1852,26 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "  fmt.Fprintln(os.Stderr, \"\\nFunctions:\")" << endl;
 
     for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
-        string funcName((*f_iter)->get_name());
-        string funcSignature(function_signature_if(*f_iter, "", true));
         f_remote <<
-                 indent() << "  fmt.Fprintln(os.Stderr, \"  " << funcName << funcSignature.substr(funcSignature.find("(")) << "\")" << endl;
+                 "  fmt.Fprintln(os.Stderr, \"  " << (*f_iter)->get_returntype()->get_name() << " " << (*f_iter)->get_name() << "(";
+        t_struct* arg_struct = (*f_iter)->get_arglist();
+        const std::vector<t_field*>& args = arg_struct->get_members();
+        vector<t_field*>::const_iterator a_iter;
+        int num_args = args.size();
+        bool first = true;
+
+        for (int i = 0; i < num_args; ++i) {
+            if (first) {
+                first = false;
+            } else {
+                f_remote << ", ";
+            }
+
+            f_remote <<
+                     args[i]->get_type()->get_name() << " " << args[i]->get_name();
+        }
+
+        f_remote << ")\")" << endl;
     }
 
     f_remote <<
