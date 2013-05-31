@@ -59,7 +59,8 @@ func NewTProtocolException(t int, m string) TProtocolException {
 	return &tProtocolException{typeId: t, message: m}
 }
 
-func NewTProtocolExceptionReadField(fieldId int, fieldName string, structName string, e TProtocolException) TProtocolException {
+func NewTProtocolExceptionReadField(fieldId int, fieldName string, structName string, err error) TProtocolException {
+	e := err.(TProtocolException)
 	t := e.TypeId()
 	if t == UNKNOWN_PROTOCOL_EXCEPTION {
 		t = INVALID_DATA
@@ -67,7 +68,8 @@ func NewTProtocolExceptionReadField(fieldId int, fieldName string, structName st
 	return NewTProtocolException(t, "Unable to read field "+string(fieldId)+" ("+fieldName+") in "+structName+" due to: "+e.Error())
 }
 
-func NewTProtocolExceptionWriteField(fieldId int, fieldName string, structName string, e TProtocolException) TProtocolException {
+func NewTProtocolExceptionWriteField(fieldId int, fieldName string, structName string, err error) TProtocolException {
+	e := err.(TProtocolException)
 	t := e.TypeId()
 	if t == UNKNOWN_PROTOCOL_EXCEPTION {
 		t = INVALID_DATA
@@ -75,7 +77,8 @@ func NewTProtocolExceptionWriteField(fieldId int, fieldName string, structName s
 	return NewTProtocolException(t, "Unable to write field "+string(fieldId)+" ("+fieldName+") in "+structName+" due to: "+e.Error())
 }
 
-func NewTProtocolExceptionReadStruct(structName string, e TProtocolException) TProtocolException {
+func NewTProtocolExceptionReadStruct(structName string, err error) TProtocolException {
+	e := err.(TProtocolException)
 	t := e.TypeId()
 	if t == UNKNOWN_PROTOCOL_EXCEPTION {
 		t = INVALID_DATA
@@ -83,7 +86,8 @@ func NewTProtocolExceptionReadStruct(structName string, e TProtocolException) TP
 	return NewTProtocolException(t, "Unable to read struct "+structName+" due to: "+e.Error())
 }
 
-func NewTProtocolExceptionWriteStruct(structName string, e TProtocolException) TProtocolException {
+func NewTProtocolExceptionWriteStruct(structName string, err error) TProtocolException {
+	e := err.(TProtocolException)
 	t := e.TypeId()
 	if t == UNKNOWN_PROTOCOL_EXCEPTION {
 		t = INVALID_DATA

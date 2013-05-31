@@ -113,7 +113,7 @@ func NewTCompactProtocol(trans TTransport) *TCompactProtocol {
 
 // Write a message header to the wire. Compact Protocol messages contain the
 // protocol version so we can migrate forwards in the future if need be.
-func (p *TCompactProtocol) WriteMessageBegin(name string, typeId TMessageType, seqid int32) TProtocolException {
+func (p *TCompactProtocol) WriteMessageBegin(name string, typeId TMessageType, seqid int32) error {
 	_, err := p.writeByteDirect(COMPACT_PROTOCOL_ID)
 	if err != nil {
 		return newTProtocolExceptionFromError(err)
@@ -131,12 +131,12 @@ func (p *TCompactProtocol) WriteMessageBegin(name string, typeId TMessageType, s
 
 }
 
-func (p *TCompactProtocol) WriteMessageEnd() TProtocolException { return nil }
+func (p *TCompactProtocol) WriteMessageEnd() error { return nil }
 
 // Write a struct begin. This doesn't actually put anything on the wire. We
 // use it as an opportunity to put special placeholder markers on the field
 // stack so we can get the field id deltas correct.
-func (p *TCompactProtocol) WriteStructBegin(name string) TProtocolException {
+func (p *TCompactProtocol) WriteStructBegin(name string) error {
 	p.lastField = append(p.lastField, p.lastFieldId)
 	p.lastFieldId = 0
 	return nil
@@ -145,13 +145,13 @@ func (p *TCompactProtocol) WriteStructBegin(name string) TProtocolException {
 // Write a struct end. This doesn't actually put anything on the wire. We use
 // this as an opportunity to pop the last field from the current struct off
 // of the field stack.
-func (p *TCompactProtocol) WriteStructEnd() TProtocolException {
+func (p *TCompactProtocol) WriteStructEnd() error {
 	p.lastFieldId = p.lastField[len(p.lastField)-1]
 	p.lastField = p.lastField[:len(p.lastField)-1]
 	return nil
 }
 
-func (p *TCompactProtocol) WriteFieldBegin(name string, typeId TType, id int16) TProtocolException {
+func (p *TCompactProtocol) WriteFieldBegin(name string, typeId TType, id int16) error {
 	if typeId == BOOL {
 		// we want to possibly include the value, so we'll wait.
 		p.booleanField = NewTField(name, typeId, int(id))
@@ -201,14 +201,14 @@ func (p *TCompactProtocol) writeFieldBeginInternal(name string, typeId TType, id
 	return written, nil
 }
 
-func (p *TCompactProtocol) WriteFieldEnd() TProtocolException { return nil }
+func (p *TCompactProtocol) WriteFieldEnd() error { return nil }
 
-func (p *TCompactProtocol) WriteFieldStop() TProtocolException {
+func (p *TCompactProtocol) WriteFieldStop() error {
 	_, err := p.writeByteDirect(STOP)
 	return newTProtocolExceptionFromError(err)
 }
 
-func (p *TCompactProtocol) WriteMapBegin(keyType TType, valueType TType, size int) TProtocolException {
+func (p *TCompactProtocol) WriteMapBegin(keyType TType, valueType TType, size int) error {
 	if size == 0 {
 		_, err := p.writeByteDirect(0)
 		return newTProtocolExceptionFromError(err)
@@ -221,25 +221,25 @@ func (p *TCompactProtocol) WriteMapBegin(keyType TType, valueType TType, size in
 	return newTProtocolExceptionFromError(err)
 }
 
-func (p *TCompactProtocol) WriteMapEnd() TProtocolException { return nil }
+func (p *TCompactProtocol) WriteMapEnd() error { return nil }
 
 // Write a list header.
-func (p *TCompactProtocol) WriteListBegin(elemType TType, size int) TProtocolException {
+func (p *TCompactProtocol) WriteListBegin(elemType TType, size int) error {
 	_, err := p.writeCollectionBegin(elemType, size)
 	return newTProtocolExceptionFromError(err)
 }
 
-func (p *TCompactProtocol) WriteListEnd() TProtocolException { return nil }
+func (p *TCompactProtocol) WriteListEnd() error { return nil }
 
 // Write a set header.
-func (p *TCompactProtocol) WriteSetBegin(elemType TType, size int) TProtocolException {
+func (p *TCompactProtocol) WriteSetBegin(elemType TType, size int) error {
 	_, err := p.writeCollectionBegin(elemType, size)
 	return newTProtocolExceptionFromError(err)
 }
 
-func (p *TCompactProtocol) WriteSetEnd() TProtocolException { return nil }
+func (p *TCompactProtocol) WriteSetEnd() error { return nil }
 
-func (p *TCompactProtocol) WriteBool(value bool) TProtocolException {
+func (p *TCompactProtocol) WriteBool(value bool) error {
 	v := byte(COMPACT_BOOLEAN_FALSE)
 	if value {
 		v = byte(COMPACT_BOOLEAN_TRUE)
@@ -256,31 +256,31 @@ func (p *TCompactProtocol) WriteBool(value bool) TProtocolException {
 }
 
 // Write a byte. Nothing to see here!
-func (p *TCompactProtocol) WriteByte(value byte) TProtocolException {
+func (p *TCompactProtocol) WriteByte(value byte) error {
 	_, err := p.writeByteDirect(value)
 	return newTProtocolExceptionFromError(err)
 }
 
 // Write an I16 as a zigzag varint.
-func (p *TCompactProtocol) WriteI16(value int16) TProtocolException {
+func (p *TCompactProtocol) WriteI16(value int16) error {
 	_, err := p.writeVarint32(p.int32ToZigzag(int32(value)))
 	return newTProtocolExceptionFromError(err)
 }
 
 // Write an i32 as a zigzag varint.
-func (p *TCompactProtocol) WriteI32(value int32) TProtocolException {
+func (p *TCompactProtocol) WriteI32(value int32) error {
 	_, err := p.writeVarint32(p.int32ToZigzag(value))
 	return newTProtocolExceptionFromError(err)
 }
 
 // Write an i64 as a zigzag varint.
-func (p *TCompactProtocol) WriteI64(value int64) TProtocolException {
+func (p *TCompactProtocol) WriteI64(value int64) error {
 	_, err := p.writeVarint64(p.int64ToZigzag(value))
 	return newTProtocolExceptionFromError(err)
 }
 
 // Write a double to the wire as 8 bytes.
-func (p *TCompactProtocol) WriteDouble(value float64) TProtocolException {
+func (p *TCompactProtocol) WriteDouble(value float64) error {
 	buf := make([]byte, 8)
 	binary.LittleEndian.PutUint64(buf, math.Float64bits(value))
 	_, err := p.trans.Write(buf)
@@ -288,14 +288,14 @@ func (p *TCompactProtocol) WriteDouble(value float64) TProtocolException {
 }
 
 // Write a string to the wire with a varint size preceeding.
-func (p *TCompactProtocol) WriteString(value string) TProtocolException {
+func (p *TCompactProtocol) WriteString(value string) error {
 	buf := make([]byte, len(value))
 	strings.NewReader(value).Read(buf)
 	return p.WriteBinary(buf)
 }
 
 // Write a byte array, using a varint for the size.
-func (p *TCompactProtocol) WriteBinary(bin []byte) TProtocolException {
+func (p *TCompactProtocol) WriteBinary(bin []byte) error {
 	_, e := p.writeVarint32(int32(len(bin)))
 	if e != nil {
 		return newTProtocolExceptionFromError(e)
@@ -312,7 +312,7 @@ func (p *TCompactProtocol) WriteBinary(bin []byte) TProtocolException {
 //
 
 // Read a message header.
-func (p *TCompactProtocol) ReadMessageBegin() (name string, typeId TMessageType, seqId int32, err TProtocolException) {
+func (p *TCompactProtocol) ReadMessageBegin() (name string, typeId TMessageType, seqId int32, err error) {
 	protocolId, err := p.ReadByte()
 	if protocolId != COMPACT_PROTOCOL_ID {
 		s := fmt.Sprintf("Expected protocol id %02x but got %02x", COMPACT_PROTOCOL_ID, protocolId)
@@ -338,11 +338,11 @@ func (p *TCompactProtocol) ReadMessageBegin() (name string, typeId TMessageType,
 	return
 }
 
-func (p *TCompactProtocol) ReadMessageEnd() TProtocolException { return nil }
+func (p *TCompactProtocol) ReadMessageEnd() error { return nil }
 
 // Read a struct begin. There's nothing on the wire for this, but it is our
 // opportunity to push a new struct begin marker onto the field stack.
-func (p *TCompactProtocol) ReadStructBegin() (name string, err TProtocolException) {
+func (p *TCompactProtocol) ReadStructBegin() (name string, err error) {
 	p.lastField = append(p.lastField, p.lastFieldId)
 	p.lastFieldId = 0
 	return
@@ -350,14 +350,14 @@ func (p *TCompactProtocol) ReadStructBegin() (name string, err TProtocolExceptio
 
 // Doesn't actually consume any wire data, just removes the last field for
 // this struct from the field stack.
-func (p *TCompactProtocol) ReadStructEnd() TProtocolException {
+func (p *TCompactProtocol) ReadStructEnd() error {
 	// consume the last field we read off the wire.
 	p.lastFieldId = p.lastField[len(p.lastField)-1]
 	return nil
 }
 
 // Read a field header off the wire.
-func (p *TCompactProtocol) ReadFieldBegin() (name string, typeId TType, id int16, err TProtocolException) {
+func (p *TCompactProtocol) ReadFieldBegin() (name string, typeId TType, id int16, err error) {
 	t, err := p.ReadByte()
 	if err != nil {
 		return
@@ -398,12 +398,12 @@ func (p *TCompactProtocol) ReadFieldBegin() (name string, typeId TType, id int16
 	return
 }
 
-func (p *TCompactProtocol) ReadFieldEnd() TProtocolException { return nil }
+func (p *TCompactProtocol) ReadFieldEnd() error { return nil }
 
 // Read a map header off the wire. If the size is zero, skip reading the key
 // and value type. This means that 0-length maps will yield TMaps without the
 // "correct" types.
-func (p *TCompactProtocol) ReadMapBegin() (keyType TType, valueType TType, size int, err TProtocolException) {
+func (p *TCompactProtocol) ReadMapBegin() (keyType TType, valueType TType, size int, err error) {
 	size32, e := p.readVarint32()
 	size = int(size32)
 	if e != nil {
@@ -422,13 +422,13 @@ func (p *TCompactProtocol) ReadMapBegin() (keyType TType, valueType TType, size 
 	return
 }
 
-func (p *TCompactProtocol) ReadMapEnd() TProtocolException { return nil }
+func (p *TCompactProtocol) ReadMapEnd() error { return nil }
 
 // Read a list header off the wire. If the list size is 0-14, the size will
 // be packed into the element type header. If it's a longer list, the 4 MSB
 // of the element type header will be 0xF, and a varint will follow with the
 // true size.
-func (p *TCompactProtocol) ReadListBegin() (elemType TType, size int, err TProtocolException) {
+func (p *TCompactProtocol) ReadListBegin() (elemType TType, size int, err error) {
 	size_and_type, err := p.ReadByte()
 	if err != nil {
 		return
@@ -450,22 +450,22 @@ func (p *TCompactProtocol) ReadListBegin() (elemType TType, size int, err TProto
 	return
 }
 
-func (p *TCompactProtocol) ReadListEnd() TProtocolException { return nil }
+func (p *TCompactProtocol) ReadListEnd() error { return nil }
 
 // Read a set header off the wire. If the set size is 0-14, the size will
 // be packed into the element type header. If it's a longer set, the 4 MSB
 // of the element type header will be 0xF, and a varint will follow with the
 // true size.
-func (p *TCompactProtocol) ReadSetBegin() (elemType TType, size int, err TProtocolException) {
+func (p *TCompactProtocol) ReadSetBegin() (elemType TType, size int, err error) {
 	return p.ReadListBegin()
 }
 
-func (p *TCompactProtocol) ReadSetEnd() TProtocolException { return nil }
+func (p *TCompactProtocol) ReadSetEnd() error { return nil }
 
 // Read a boolean off the wire. If this is a boolean field, the value should
 // already have been read during readFieldBegin, so we'll just consume the
 // pre-stored value. Otherwise, read a byte.
-func (p *TCompactProtocol) ReadBool() (value bool, err TProtocolException) {
+func (p *TCompactProtocol) ReadBool() (value bool, err error) {
 	if p.boolValueIsNotNull {
 		p.boolValueIsNotNull = false
 		return p.boolValue, nil
@@ -475,7 +475,7 @@ func (p *TCompactProtocol) ReadBool() (value bool, err TProtocolException) {
 }
 
 // Read a single byte off the wire. Nothing interesting here.
-func (p *TCompactProtocol) ReadByte() (value byte, err TProtocolException) {
+func (p *TCompactProtocol) ReadByte() (value byte, err error) {
 	buf := []byte{0}
 	_, e := io.ReadFull(p.trans, buf)
 	if e != nil {
@@ -485,13 +485,13 @@ func (p *TCompactProtocol) ReadByte() (value byte, err TProtocolException) {
 }
 
 // Read an i16 from the wire as a zigzag varint.
-func (p *TCompactProtocol) ReadI16() (value int16, err TProtocolException) {
+func (p *TCompactProtocol) ReadI16() (value int16, err error) {
 	v, err := p.ReadI32()
 	return int16(v), err
 }
 
 // Read an i32 from the wire as a zigzag varint.
-func (p *TCompactProtocol) ReadI32() (value int32, err TProtocolException) {
+func (p *TCompactProtocol) ReadI32() (value int32, err error) {
 	v, e := p.readVarint32()
 	if e != nil {
 		return 0, newTProtocolExceptionFromError(e)
@@ -501,7 +501,7 @@ func (p *TCompactProtocol) ReadI32() (value int32, err TProtocolException) {
 }
 
 // Read an i64 from the wire as a zigzag varint.
-func (p *TCompactProtocol) ReadI64() (value int64, err TProtocolException) {
+func (p *TCompactProtocol) ReadI64() (value int64, err error) {
 	v, e := p.readVarint64()
 	if e != nil {
 		return 0, newTProtocolExceptionFromError(e)
@@ -511,7 +511,7 @@ func (p *TCompactProtocol) ReadI64() (value int64, err TProtocolException) {
 }
 
 // No magic here - just read a double off the wire.
-func (p *TCompactProtocol) ReadDouble() (value float64, err TProtocolException) {
+func (p *TCompactProtocol) ReadDouble() (value float64, err error) {
 	longBits := make([]byte, 8)
 	_, e := io.ReadFull(p.trans, longBits)
 	if e != nil {
@@ -521,13 +521,13 @@ func (p *TCompactProtocol) ReadDouble() (value float64, err TProtocolException) 
 }
 
 // Reads a []byte (via readBinary), and then UTF-8 decodes it.
-func (p *TCompactProtocol) ReadString() (value string, err TProtocolException) {
+func (p *TCompactProtocol) ReadString() (value string, err error) {
 	v, e := p.ReadBinary()
 	return string(v), newTProtocolExceptionFromError(e)
 }
 
 // Read a []byte from the wire.
-func (p *TCompactProtocol) ReadBinary() (value []byte, err TProtocolException) {
+func (p *TCompactProtocol) ReadBinary() (value []byte, err error) {
 	length, e := p.readVarint32()
 	if e != nil {
 		return []byte{}, newTProtocolExceptionFromError(e)
@@ -541,11 +541,11 @@ func (p *TCompactProtocol) ReadBinary() (value []byte, err TProtocolException) {
 	return buf, newTProtocolExceptionFromError(e)
 }
 
-func (p *TCompactProtocol) Flush() (err TProtocolException) {
+func (p *TCompactProtocol) Flush() (err error) {
 	return newTProtocolExceptionFromError(p.trans.Flush())
 }
 
-func (p *TCompactProtocol) Skip(fieldType TType) (err TProtocolException) {
+func (p *TCompactProtocol) Skip(fieldType TType) (err error) {
 	return SkipDefaultDepth(p, fieldType)
 }
 

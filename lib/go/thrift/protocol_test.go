@@ -634,7 +634,7 @@ func NewWork() *Work {
 	return output
 }
 
-func (p *Work) Read(iprot TProtocol) (err TProtocolException) {
+func (p *Work) Read(iprot TProtocol) (err error) {
 	_, err = iprot.ReadStructBegin()
 	if err != nil {
 		return NewTProtocolExceptionReadStruct(p.ThriftName(), err)
@@ -741,7 +741,7 @@ func (p *Work) Read(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *Work) ReadField1(iprot TProtocol) (err TProtocolException) {
+func (p *Work) ReadField1(iprot TProtocol) (err error) {
 	v4, err5 := iprot.ReadI32()
 	if err5 != nil {
 		return NewTProtocolExceptionReadField(1, "num1", p.ThriftName(), err5)
@@ -750,11 +750,11 @@ func (p *Work) ReadField1(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *Work) ReadFieldNum1(iprot TProtocol) TProtocolException {
+func (p *Work) ReadFieldNum1(iprot TProtocol) error {
 	return p.ReadField1(iprot)
 }
 
-func (p *Work) ReadField2(iprot TProtocol) (err TProtocolException) {
+func (p *Work) ReadField2(iprot TProtocol) (err error) {
 	v6, err7 := iprot.ReadI32()
 	if err7 != nil {
 		return NewTProtocolExceptionReadField(2, "num2", p.ThriftName(), err7)
@@ -763,11 +763,11 @@ func (p *Work) ReadField2(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *Work) ReadFieldNum2(iprot TProtocol) TProtocolException {
+func (p *Work) ReadFieldNum2(iprot TProtocol) error {
 	return p.ReadField2(iprot)
 }
 
-func (p *Work) ReadField3(iprot TProtocol) (err TProtocolException) {
+func (p *Work) ReadField3(iprot TProtocol) (err error) {
 	v8, err9 := iprot.ReadI32()
 	if err9 != nil {
 		return NewTProtocolExceptionReadField(3, "op", p.ThriftName(), err9)
@@ -776,11 +776,11 @@ func (p *Work) ReadField3(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *Work) ReadFieldOp(iprot TProtocol) TProtocolException {
+func (p *Work) ReadFieldOp(iprot TProtocol) error {
 	return p.ReadField3(iprot)
 }
 
-func (p *Work) ReadField4(iprot TProtocol) (err TProtocolException) {
+func (p *Work) ReadField4(iprot TProtocol) (err error) {
 	v10, err11 := iprot.ReadString()
 	if err11 != nil {
 		return NewTProtocolExceptionReadField(4, "comment", p.ThriftName(), err11)
@@ -789,11 +789,11 @@ func (p *Work) ReadField4(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *Work) ReadFieldComment(iprot TProtocol) TProtocolException {
+func (p *Work) ReadFieldComment(iprot TProtocol) error {
 	return p.ReadField4(iprot)
 }
 
-func (p *Work) Write(oprot TProtocol) (err TProtocolException) {
+func (p *Work) Write(oprot TProtocol) (err error) {
 	err = oprot.WriteStructBegin("Work")
 	if err != nil {
 		return NewTProtocolExceptionWriteStruct(p.ThriftName(), err)
@@ -825,7 +825,7 @@ func (p *Work) Write(oprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *Work) WriteField1(oprot TProtocol) (err TProtocolException) {
+func (p *Work) WriteField1(oprot TProtocol) (err error) {
 	err = oprot.WriteFieldBegin("num1", I32, 1)
 	if err != nil {
 		return NewTProtocolExceptionWriteField(1, "num1", p.ThriftName(), err)
@@ -841,11 +841,11 @@ func (p *Work) WriteField1(oprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *Work) WriteFieldNum1(oprot TProtocol) TProtocolException {
+func (p *Work) WriteFieldNum1(oprot TProtocol) error {
 	return p.WriteField1(oprot)
 }
 
-func (p *Work) WriteField2(oprot TProtocol) (err TProtocolException) {
+func (p *Work) WriteField2(oprot TProtocol) (err error) {
 	err = oprot.WriteFieldBegin("num2", I32, 2)
 	if err != nil {
 		return NewTProtocolExceptionWriteField(2, "num2", p.ThriftName(), err)
@@ -861,11 +861,11 @@ func (p *Work) WriteField2(oprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *Work) WriteFieldNum2(oprot TProtocol) TProtocolException {
+func (p *Work) WriteFieldNum2(oprot TProtocol) error {
 	return p.WriteField2(oprot)
 }
 
-func (p *Work) WriteField3(oprot TProtocol) (err TProtocolException) {
+func (p *Work) WriteField3(oprot TProtocol) (err error) {
 	err = oprot.WriteFieldBegin("op", I32, 3)
 	if err != nil {
 		return NewTProtocolExceptionWriteField(3, "op", p.ThriftName(), err)
@@ -881,11 +881,11 @@ func (p *Work) WriteField3(oprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *Work) WriteFieldOp(oprot TProtocol) TProtocolException {
+func (p *Work) WriteFieldOp(oprot TProtocol) error {
 	return p.WriteField3(oprot)
 }
 
-func (p *Work) WriteField4(oprot TProtocol) (err TProtocolException) {
+func (p *Work) WriteField4(oprot TProtocol) (err error) {
 	err = oprot.WriteFieldBegin("comment", STRING, 4)
 	if err != nil {
 		return NewTProtocolExceptionWriteField(4, "comment", p.ThriftName(), err)
@@ -901,7 +901,7 @@ func (p *Work) WriteField4(oprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *Work) WriteFieldComment(oprot TProtocol) TProtocolException {
+func (p *Work) WriteFieldComment(oprot TProtocol) error {
 	return p.WriteField4(oprot)
 }
 
@@ -1097,7 +1097,7 @@ func NewCalculateArgs() *CalculateArgs {
 	return output
 }
 
-func (p *CalculateArgs) Read(iprot TProtocol) (err TProtocolException) {
+func (p *CalculateArgs) Read(iprot TProtocol) (err error) {
 	_, err = iprot.ReadStructBegin()
 	if err != nil {
 		return NewTProtocolExceptionReadStruct(p.ThriftName(), err)
@@ -1170,7 +1170,7 @@ func (p *CalculateArgs) Read(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *CalculateArgs) ReadField1(iprot TProtocol) (err TProtocolException) {
+func (p *CalculateArgs) ReadField1(iprot TProtocol) (err error) {
 	v47, err48 := iprot.ReadI32()
 	if err48 != nil {
 		return NewTProtocolExceptionReadField(1, "logid", p.ThriftName(), err48)
@@ -1179,11 +1179,11 @@ func (p *CalculateArgs) ReadField1(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *CalculateArgs) ReadFieldLogid(iprot TProtocol) TProtocolException {
+func (p *CalculateArgs) ReadFieldLogid(iprot TProtocol) error {
 	return p.ReadField1(iprot)
 }
 
-func (p *CalculateArgs) ReadField2(iprot TProtocol) (err TProtocolException) {
+func (p *CalculateArgs) ReadField2(iprot TProtocol) (err error) {
 	p.W = NewWork()
 	err51 := p.W.Read(iprot)
 	if err51 != nil {
@@ -1192,11 +1192,11 @@ func (p *CalculateArgs) ReadField2(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *CalculateArgs) ReadFieldW(iprot TProtocol) TProtocolException {
+func (p *CalculateArgs) ReadFieldW(iprot TProtocol) error {
 	return p.ReadField2(iprot)
 }
 
-func (p *CalculateArgs) Write(oprot TProtocol) (err TProtocolException) {
+func (p *CalculateArgs) Write(oprot TProtocol) (err error) {
 	err = oprot.WriteStructBegin("calculate_args")
 	if err != nil {
 		return NewTProtocolExceptionWriteStruct(p.ThriftName(), err)
@@ -1220,7 +1220,7 @@ func (p *CalculateArgs) Write(oprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *CalculateArgs) WriteField1(oprot TProtocol) (err TProtocolException) {
+func (p *CalculateArgs) WriteField1(oprot TProtocol) (err error) {
 	err = oprot.WriteFieldBegin("logid", I32, 1)
 	if err != nil {
 		return NewTProtocolExceptionWriteField(1, "logid", p.ThriftName(), err)
@@ -1236,11 +1236,11 @@ func (p *CalculateArgs) WriteField1(oprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *CalculateArgs) WriteFieldLogid(oprot TProtocol) TProtocolException {
+func (p *CalculateArgs) WriteFieldLogid(oprot TProtocol) error {
 	return p.WriteField1(oprot)
 }
 
-func (p *CalculateArgs) WriteField2(oprot TProtocol) (err TProtocolException) {
+func (p *CalculateArgs) WriteField2(oprot TProtocol) (err error) {
 	if p.W != nil {
 		err = oprot.WriteFieldBegin("w", STRUCT, 2)
 		if err != nil {
@@ -1258,7 +1258,7 @@ func (p *CalculateArgs) WriteField2(oprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *CalculateArgs) WriteFieldW(oprot TProtocol) TProtocolException {
+func (p *CalculateArgs) WriteFieldW(oprot TProtocol) error {
 	return p.WriteField2(oprot)
 }
 
@@ -1337,7 +1337,7 @@ func NewCalculateResult() *CalculateResult {
 	return output
 }
 
-func (p *CalculateResult) Read(iprot TProtocol) (err TProtocolException) {
+func (p *CalculateResult) Read(iprot TProtocol) (err error) {
 	_, err = iprot.ReadStructBegin()
 	if err != nil {
 		return NewTProtocolExceptionReadStruct(p.ThriftName(), err)
@@ -1410,7 +1410,7 @@ func (p *CalculateResult) Read(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *CalculateResult) ReadField0(iprot TProtocol) (err TProtocolException) {
+func (p *CalculateResult) ReadField0(iprot TProtocol) (err error) {
 	v52, err53 := iprot.ReadI32()
 	if err53 != nil {
 		return NewTProtocolExceptionReadField(0, "success", p.ThriftName(), err53)
@@ -1419,11 +1419,11 @@ func (p *CalculateResult) ReadField0(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *CalculateResult) ReadFieldSuccess(iprot TProtocol) TProtocolException {
+func (p *CalculateResult) ReadFieldSuccess(iprot TProtocol) error {
 	return p.ReadField0(iprot)
 }
 
-func (p *CalculateResult) ReadField1(iprot TProtocol) (err TProtocolException) {
+func (p *CalculateResult) ReadField1(iprot TProtocol) (err error) {
 	p.Ouch = NewInvalidOperation()
 	err56 := p.Ouch.Read(iprot)
 	if err56 != nil {
@@ -1432,11 +1432,11 @@ func (p *CalculateResult) ReadField1(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *CalculateResult) ReadFieldOuch(iprot TProtocol) TProtocolException {
+func (p *CalculateResult) ReadFieldOuch(iprot TProtocol) error {
 	return p.ReadField1(iprot)
 }
 
-func (p *CalculateResult) Write(oprot TProtocol) (err TProtocolException) {
+func (p *CalculateResult) Write(oprot TProtocol) (err error) {
 	err = oprot.WriteStructBegin("calculate_result")
 	if err != nil {
 		return NewTProtocolExceptionWriteStruct(p.ThriftName(), err)
@@ -1460,7 +1460,7 @@ func (p *CalculateResult) Write(oprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *CalculateResult) WriteField0(oprot TProtocol) (err TProtocolException) {
+func (p *CalculateResult) WriteField0(oprot TProtocol) (err error) {
 	err = oprot.WriteFieldBegin("success", I32, 0)
 	if err != nil {
 		return NewTProtocolExceptionWriteField(0, "success", p.ThriftName(), err)
@@ -1476,11 +1476,11 @@ func (p *CalculateResult) WriteField0(oprot TProtocol) (err TProtocolException) 
 	return err
 }
 
-func (p *CalculateResult) WriteFieldSuccess(oprot TProtocol) TProtocolException {
+func (p *CalculateResult) WriteFieldSuccess(oprot TProtocol) error {
 	return p.WriteField0(oprot)
 }
 
-func (p *CalculateResult) WriteField1(oprot TProtocol) (err TProtocolException) {
+func (p *CalculateResult) WriteField1(oprot TProtocol) (err error) {
 	if p.Ouch != nil {
 		err = oprot.WriteFieldBegin("ouch", STRUCT, 1)
 		if err != nil {
@@ -1498,7 +1498,7 @@ func (p *CalculateResult) WriteField1(oprot TProtocol) (err TProtocolException) 
 	return err
 }
 
-func (p *CalculateResult) WriteFieldOuch(oprot TProtocol) TProtocolException {
+func (p *CalculateResult) WriteFieldOuch(oprot TProtocol) error {
 	return p.WriteField1(oprot)
 }
 
@@ -1580,7 +1580,7 @@ func NewInvalidOperation() *InvalidOperation {
 	return output
 }
 
-func (p *InvalidOperation) Read(iprot TProtocol) (err TProtocolException) {
+func (p *InvalidOperation) Read(iprot TProtocol) (err error) {
 	_, err = iprot.ReadStructBegin()
 	if err != nil {
 		return NewTProtocolExceptionReadStruct(p.ThriftName(), err)
@@ -1653,7 +1653,7 @@ func (p *InvalidOperation) Read(iprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *InvalidOperation) ReadField1(iprot TProtocol) (err TProtocolException) {
+func (p *InvalidOperation) ReadField1(iprot TProtocol) (err error) {
 	v12, err13 := iprot.ReadI32()
 	if err13 != nil {
 		return NewTProtocolExceptionReadField(1, "what", p.ThriftName(), err13)
@@ -1662,11 +1662,11 @@ func (p *InvalidOperation) ReadField1(iprot TProtocol) (err TProtocolException) 
 	return err
 }
 
-func (p *InvalidOperation) ReadFieldWhat(iprot TProtocol) TProtocolException {
+func (p *InvalidOperation) ReadFieldWhat(iprot TProtocol) error {
 	return p.ReadField1(iprot)
 }
 
-func (p *InvalidOperation) ReadField2(iprot TProtocol) (err TProtocolException) {
+func (p *InvalidOperation) ReadField2(iprot TProtocol) (err error) {
 	v14, err15 := iprot.ReadString()
 	if err15 != nil {
 		return NewTProtocolExceptionReadField(2, "why", p.ThriftName(), err15)
@@ -1675,11 +1675,11 @@ func (p *InvalidOperation) ReadField2(iprot TProtocol) (err TProtocolException) 
 	return err
 }
 
-func (p *InvalidOperation) ReadFieldWhy(iprot TProtocol) TProtocolException {
+func (p *InvalidOperation) ReadFieldWhy(iprot TProtocol) error {
 	return p.ReadField2(iprot)
 }
 
-func (p *InvalidOperation) Write(oprot TProtocol) (err TProtocolException) {
+func (p *InvalidOperation) Write(oprot TProtocol) (err error) {
 	err = oprot.WriteStructBegin("InvalidOperation")
 	if err != nil {
 		return NewTProtocolExceptionWriteStruct(p.ThriftName(), err)
@@ -1703,7 +1703,7 @@ func (p *InvalidOperation) Write(oprot TProtocol) (err TProtocolException) {
 	return err
 }
 
-func (p *InvalidOperation) WriteField1(oprot TProtocol) (err TProtocolException) {
+func (p *InvalidOperation) WriteField1(oprot TProtocol) (err error) {
 	err = oprot.WriteFieldBegin("what", I32, 1)
 	if err != nil {
 		return NewTProtocolExceptionWriteField(1, "what", p.ThriftName(), err)
@@ -1719,11 +1719,11 @@ func (p *InvalidOperation) WriteField1(oprot TProtocol) (err TProtocolException)
 	return err
 }
 
-func (p *InvalidOperation) WriteFieldWhat(oprot TProtocol) TProtocolException {
+func (p *InvalidOperation) WriteFieldWhat(oprot TProtocol) error {
 	return p.WriteField1(oprot)
 }
 
-func (p *InvalidOperation) WriteField2(oprot TProtocol) (err TProtocolException) {
+func (p *InvalidOperation) WriteField2(oprot TProtocol) (err error) {
 	err = oprot.WriteFieldBegin("why", STRING, 2)
 	if err != nil {
 		return NewTProtocolExceptionWriteField(2, "why", p.ThriftName(), err)
@@ -1739,7 +1739,7 @@ func (p *InvalidOperation) WriteField2(oprot TProtocol) (err TProtocolException)
 	return err
 }
 
-func (p *InvalidOperation) WriteFieldWhy(oprot TProtocol) TProtocolException {
+func (p *InvalidOperation) WriteFieldWhy(oprot TProtocol) error {
 	return p.WriteField2(oprot)
 }
 

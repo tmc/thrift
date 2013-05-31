@@ -1174,7 +1174,7 @@ void t_go_generator::generate_go_struct_reader(ofstream& out,
     vector<t_field*>::const_iterator f_iter;
     string escaped_tstruct_name(escape_string(tstruct->get_name()));
     out <<
-        indent() << "func (p *" << tstruct_name << ") Read(iprot thrift.TProtocol) (err thrift.TProtocolException) {" << endl;
+        indent() << "func (p *" << tstruct_name << ") Read(iprot thrift.TProtocol) (err error) {" << endl;
     indent_up();
     out <<
         indent() << "_, err = iprot.ReadStructBegin()" << endl <<
@@ -1269,14 +1269,14 @@ void t_go_generator::generate_go_struct_reader(ofstream& out,
         string field_name(publicize((*f_iter)->get_name()));
         int32_t field_id = (*f_iter)->get_key();
         out <<
-            indent() << "func (p *" << tstruct_name << ") ReadField" << field_id << "(iprot thrift.TProtocol) (err thrift.TProtocolException) {" << endl;
+            indent() << "func (p *" << tstruct_name << ") ReadField" << field_id << "(iprot thrift.TProtocol) (err error) {" << endl;
         indent_up();
         generate_deserialize_field(out, *f_iter, false, "p.");
         indent_down();
         out <<
             indent() << "  return err" << endl <<
             indent() << "}" << endl << endl <<
-            indent() << "func (p *" << tstruct_name << ") ReadField" << field_name << "(iprot thrift.TProtocol) (thrift.TProtocolException) {" << endl <<
+            indent() << "func (p *" << tstruct_name << ") ReadField" << field_name << "(iprot thrift.TProtocol) error {" << endl <<
             indent() << "  return p.ReadField" << field_id << "(iprot)" << endl <<
             indent() << "}" << endl << endl;
     }
@@ -1291,7 +1291,7 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
     const vector<t_field*>& fields = tstruct->get_sorted_members();
     vector<t_field*>::const_iterator f_iter;
     indent(out) <<
-                "func (p *" << tstruct_name << ") Write(oprot thrift.TProtocol) (err thrift.TProtocolException) {" << endl;
+                "func (p *" << tstruct_name << ") Write(oprot thrift.TProtocol) (err error) {" << endl;
     indent_up();
     out <<
         indent() << "err = oprot.WriteStructBegin(\"" << name << "\")" << endl <<
@@ -1361,7 +1361,7 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
         field_required = (*f_iter)->get_req();
         field_can_be_nil = can_be_nil((*f_iter)->get_type());
         out <<
-            indent() << "func (p *" << tstruct_name << ") WriteField" << fieldId << "(oprot thrift.TProtocol) (err thrift.TProtocolException) {" << endl;
+            indent() << "func (p *" << tstruct_name << ") WriteField" << fieldId << "(oprot thrift.TProtocol) (err error) {" << endl;
         indent_up();
 
         // Write field header
@@ -1412,7 +1412,7 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
         out <<
             indent() << "  return err" << endl <<
             indent() << "}" << endl << endl <<
-            indent() << "func (p *" << tstruct_name << ") WriteField" << publicize(field_name) << "(oprot thrift.TProtocol) (thrift.TProtocolException) {" << endl <<
+            indent() << "func (p *" << tstruct_name << ") WriteField" << publicize(field_name) << "(oprot thrift.TProtocol) error {" << endl <<
             indent() << "  return p.WriteField" << fieldId << "(oprot)" << endl <<
             indent() << "}" << endl << endl;
     }

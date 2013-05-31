@@ -59,7 +59,7 @@ func NewTJSONProtocolFactory() *TJSONProtocolFactory {
 	return &TJSONProtocolFactory{}
 }
 
-func (p *TJSONProtocol) WriteMessageBegin(name string, typeId TMessageType, seqId int32) TProtocolException {
+func (p *TJSONProtocol) WriteMessageBegin(name string, typeId TMessageType, seqId int32) error {
 	if e := p.OutputListBegin(); e != nil {
 		return e
 	}
@@ -78,22 +78,22 @@ func (p *TJSONProtocol) WriteMessageBegin(name string, typeId TMessageType, seqI
 	return nil
 }
 
-func (p *TJSONProtocol) WriteMessageEnd() TProtocolException {
+func (p *TJSONProtocol) WriteMessageEnd() error {
 	return p.OutputListEnd()
 }
 
-func (p *TJSONProtocol) WriteStructBegin(name string) TProtocolException {
+func (p *TJSONProtocol) WriteStructBegin(name string) error {
 	if e := p.OutputObjectBegin(); e != nil {
 		return e
 	}
 	return nil
 }
 
-func (p *TJSONProtocol) WriteStructEnd() TProtocolException {
+func (p *TJSONProtocol) WriteStructEnd() error {
 	return p.OutputObjectEnd()
 }
 
-func (p *TJSONProtocol) WriteFieldBegin(name string, typeId TType, id int16) TProtocolException {
+func (p *TJSONProtocol) WriteFieldBegin(name string, typeId TType, id int16) error {
 	if e := p.WriteI16(id); e != nil {
 		return e
 	}
@@ -106,13 +106,13 @@ func (p *TJSONProtocol) WriteFieldBegin(name string, typeId TType, id int16) TPr
 	return nil
 }
 
-func (p *TJSONProtocol) WriteFieldEnd() TProtocolException {
+func (p *TJSONProtocol) WriteFieldEnd() error {
 	return p.OutputObjectEnd()
 }
 
-func (p *TJSONProtocol) WriteFieldStop() TProtocolException { return nil }
+func (p *TJSONProtocol) WriteFieldStop() error { return nil }
 
-func (p *TJSONProtocol) WriteMapBegin(keyType TType, valueType TType, size int) TProtocolException {
+func (p *TJSONProtocol) WriteMapBegin(keyType TType, valueType TType, size int) error {
 	if e := p.OutputListBegin(); e != nil {
 		return e
 	}
@@ -125,55 +125,55 @@ func (p *TJSONProtocol) WriteMapBegin(keyType TType, valueType TType, size int) 
 	return p.WriteI64(int64(size))
 }
 
-func (p *TJSONProtocol) WriteMapEnd() TProtocolException {
+func (p *TJSONProtocol) WriteMapEnd() error {
 	return p.OutputListEnd()
 }
 
-func (p *TJSONProtocol) WriteListBegin(elemType TType, size int) TProtocolException {
+func (p *TJSONProtocol) WriteListBegin(elemType TType, size int) error {
 	return p.OutputElemListBegin(elemType, size)
 }
 
-func (p *TJSONProtocol) WriteListEnd() TProtocolException {
+func (p *TJSONProtocol) WriteListEnd() error {
 	return p.OutputListEnd()
 }
 
-func (p *TJSONProtocol) WriteSetBegin(elemType TType, size int) TProtocolException {
+func (p *TJSONProtocol) WriteSetBegin(elemType TType, size int) error {
 	return p.OutputElemListBegin(elemType, size)
 }
 
-func (p *TJSONProtocol) WriteSetEnd() TProtocolException {
+func (p *TJSONProtocol) WriteSetEnd() error {
 	return p.OutputListEnd()
 }
 
-func (p *TJSONProtocol) WriteBool(b bool) TProtocolException {
+func (p *TJSONProtocol) WriteBool(b bool) error {
 	return p.OutputBool(b)
 }
 
-func (p *TJSONProtocol) WriteByte(b byte) TProtocolException {
+func (p *TJSONProtocol) WriteByte(b byte) error {
 	return p.WriteI32(int32(b))
 }
 
-func (p *TJSONProtocol) WriteI16(v int16) TProtocolException {
+func (p *TJSONProtocol) WriteI16(v int16) error {
 	return p.WriteI32(int32(v))
 }
 
-func (p *TJSONProtocol) WriteI32(v int32) TProtocolException {
+func (p *TJSONProtocol) WriteI32(v int32) error {
 	return p.OutputI64(int64(v))
 }
 
-func (p *TJSONProtocol) WriteI64(v int64) TProtocolException {
+func (p *TJSONProtocol) WriteI64(v int64) error {
 	return p.OutputI64(int64(v))
 }
 
-func (p *TJSONProtocol) WriteDouble(v float64) TProtocolException {
+func (p *TJSONProtocol) WriteDouble(v float64) error {
 	return p.OutputF64(v)
 }
 
-func (p *TJSONProtocol) WriteString(v string) TProtocolException {
+func (p *TJSONProtocol) WriteString(v string) error {
 	return p.OutputString(v)
 }
 
-func (p *TJSONProtocol) WriteBinary(v []byte) TProtocolException {
+func (p *TJSONProtocol) WriteBinary(v []byte) error {
 	// JSON library only takes in a string,
 	// not an arbitrary byte array, to ensure bytes are transmitted
 	// efficiently we must convert this into a valid JSON string
@@ -193,7 +193,7 @@ func (p *TJSONProtocol) WriteBinary(v []byte) TProtocolException {
 
 // Reading methods.
 
-func (p *TJSONProtocol) ReadMessageBegin() (name string, typeId TMessageType, seqId int32, err TProtocolException) {
+func (p *TJSONProtocol) ReadMessageBegin() (name string, typeId TMessageType, seqId int32, err error) {
 	if isNull, err := p.ParseListBegin(); isNull || err != nil {
 		return name, typeId, seqId, err
 	}
@@ -218,21 +218,21 @@ func (p *TJSONProtocol) ReadMessageBegin() (name string, typeId TMessageType, se
 	return name, typeId, seqId, nil
 }
 
-func (p *TJSONProtocol) ReadMessageEnd() TProtocolException {
+func (p *TJSONProtocol) ReadMessageEnd() error {
 	err := p.ParseListEnd()
 	return err
 }
 
-func (p *TJSONProtocol) ReadStructBegin() (name string, err TProtocolException) {
+func (p *TJSONProtocol) ReadStructBegin() (name string, err error) {
 	_, err = p.ParseObjectStart()
 	return "", err
 }
 
-func (p *TJSONProtocol) ReadStructEnd() TProtocolException {
+func (p *TJSONProtocol) ReadStructEnd() error {
 	return p.ParseObjectEnd()
 }
 
-func (p *TJSONProtocol) ReadFieldBegin() (string, TType, int16, TProtocolException) {
+func (p *TJSONProtocol) ReadFieldBegin() (string, TType, int16, error) {
 	if p.reader.Buffered() < 1 {
 		return "", STOP, -1, nil
 	}
@@ -252,11 +252,11 @@ func (p *TJSONProtocol) ReadFieldBegin() (string, TType, int16, TProtocolExcepti
 	return "", fType, fieldId, err
 }
 
-func (p *TJSONProtocol) ReadFieldEnd() TProtocolException {
+func (p *TJSONProtocol) ReadFieldEnd() error {
 	return p.ParseObjectEnd()
 }
 
-func (p *TJSONProtocol) ReadMapBegin() (keyType TType, valueType TType, size int, e TProtocolException) {
+func (p *TJSONProtocol) ReadMapBegin() (keyType TType, valueType TType, size int, e error) {
 	if isNull, e := p.ParseListBegin(); isNull || e != nil {
 		return VOID, VOID, 0, e
 	}
@@ -281,27 +281,27 @@ func (p *TJSONProtocol) ReadMapBegin() (keyType TType, valueType TType, size int
 	return keyType, valueType, size, err
 }
 
-func (p *TJSONProtocol) ReadMapEnd() TProtocolException {
+func (p *TJSONProtocol) ReadMapEnd() error {
 	return p.ParseListEnd()
 }
 
-func (p *TJSONProtocol) ReadListBegin() (elemType TType, size int, e TProtocolException) {
+func (p *TJSONProtocol) ReadListBegin() (elemType TType, size int, e error) {
 	return p.ParseElemListBegin()
 }
 
-func (p *TJSONProtocol) ReadListEnd() TProtocolException {
+func (p *TJSONProtocol) ReadListEnd() error {
 	return p.ParseListEnd()
 }
 
-func (p *TJSONProtocol) ReadSetBegin() (elemType TType, size int, e TProtocolException) {
+func (p *TJSONProtocol) ReadSetBegin() (elemType TType, size int, e error) {
 	return p.ParseElemListBegin()
 }
 
-func (p *TJSONProtocol) ReadSetEnd() TProtocolException {
+func (p *TJSONProtocol) ReadSetEnd() error {
 	return p.ParseListEnd()
 }
 
-func (p *TJSONProtocol) ReadBool() (bool, TProtocolException) {
+func (p *TJSONProtocol) ReadBool() (bool, error) {
 	var value bool
 	if err := p.ParsePreValue(); err != nil {
 		return value, err
@@ -339,32 +339,32 @@ func (p *TJSONProtocol) ReadBool() (bool, TProtocolException) {
 	return value, p.ParsePostValue()
 }
 
-func (p *TJSONProtocol) ReadByte() (byte, TProtocolException) {
+func (p *TJSONProtocol) ReadByte() (byte, error) {
 	v, err := p.ReadI64()
 	return byte(v), err
 }
 
-func (p *TJSONProtocol) ReadI16() (int16, TProtocolException) {
+func (p *TJSONProtocol) ReadI16() (int16, error) {
 	v, err := p.ReadI64()
 	return int16(v), err
 }
 
-func (p *TJSONProtocol) ReadI32() (int32, TProtocolException) {
+func (p *TJSONProtocol) ReadI32() (int32, error) {
 	v, err := p.ReadI64()
 	return int32(v), err
 }
 
-func (p *TJSONProtocol) ReadI64() (int64, TProtocolException) {
+func (p *TJSONProtocol) ReadI64() (int64, error) {
 	v, _, err := p.ParseI64()
 	return v, err
 }
 
-func (p *TJSONProtocol) ReadDouble() (float64, TProtocolException) {
+func (p *TJSONProtocol) ReadDouble() (float64, error) {
 	v, _, err := p.ParseF64()
 	return v, err
 }
 
-func (p *TJSONProtocol) ReadString() (string, TProtocolException) {
+func (p *TJSONProtocol) ReadString() (string, error) {
 	var v string
 	if err := p.ParsePreValue(); err != nil {
 		return v, err
@@ -388,7 +388,7 @@ func (p *TJSONProtocol) ReadString() (string, TProtocolException) {
 	return v, p.ParsePostValue()
 }
 
-func (p *TJSONProtocol) ReadBinary() ([]byte, TProtocolException) {
+func (p *TJSONProtocol) ReadBinary() ([]byte, error) {
 	var v []byte
 	if err := p.ParsePreValue(); err != nil {
 		return nil, err
@@ -412,11 +412,11 @@ func (p *TJSONProtocol) ReadBinary() ([]byte, TProtocolException) {
 	return v, p.ParsePostValue()
 }
 
-func (p *TJSONProtocol) Flush() (err TProtocolException) {
+func (p *TJSONProtocol) Flush() (err error) {
 	return newTProtocolExceptionFromError(p.writer.Flush())
 }
 
-func (p *TJSONProtocol) Skip(fieldType TType) (err TProtocolException) {
+func (p *TJSONProtocol) Skip(fieldType TType) (err error) {
 	return SkipDefaultDepth(p, fieldType)
 }
 
@@ -424,7 +424,7 @@ func (p *TJSONProtocol) Transport() TTransport {
 	return p.trans
 }
 
-func (p *TJSONProtocol) readElemListBegin() (elemType TType, size int, e TProtocolException) {
+func (p *TJSONProtocol) readElemListBegin() (elemType TType, size int, e error) {
 	if isNull, e := p.ParseListBegin(); isNull || e != nil {
 		return VOID, 0, e
 	}
@@ -438,7 +438,7 @@ func (p *TJSONProtocol) readElemListBegin() (elemType TType, size int, e TProtoc
 	return elemType, size, err2
 }
 
-func (p *TJSONProtocol) writeElemListBegin(elemType TType, size int) TProtocolException {
+func (p *TJSONProtocol) writeElemListBegin(elemType TType, size int) error {
 	if e := p.OutputListBegin(); e != nil {
 		return e
 	}

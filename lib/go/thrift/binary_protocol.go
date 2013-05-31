@@ -64,7 +64,7 @@ func (p *TBinaryProtocolFactory) GetProtocol(t TTransport) TProtocol {
  * Writing Methods
  */
 
-func (p *TBinaryProtocol) WriteMessageBegin(name string, typeId TMessageType, seqId int32) TProtocolException {
+func (p *TBinaryProtocol) WriteMessageBegin(name string, typeId TMessageType, seqId int32) error {
 	if p._StrictWrite {
 		version := uint32(VERSION_1) | uint32(typeId)
 		e := p.WriteI32(int32(version))
@@ -92,19 +92,19 @@ func (p *TBinaryProtocol) WriteMessageBegin(name string, typeId TMessageType, se
 	return nil
 }
 
-func (p *TBinaryProtocol) WriteMessageEnd() TProtocolException {
+func (p *TBinaryProtocol) WriteMessageEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) WriteStructBegin(name string) TProtocolException {
+func (p *TBinaryProtocol) WriteStructBegin(name string) error {
 	return nil
 }
 
-func (p *TBinaryProtocol) WriteStructEnd() TProtocolException {
+func (p *TBinaryProtocol) WriteStructEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) WriteFieldBegin(name string, typeId TType, id int16) TProtocolException {
+func (p *TBinaryProtocol) WriteFieldBegin(name string, typeId TType, id int16) error {
 	e := p.WriteByte(typeId.ThriftTypeId())
 	if e != nil {
 		return e
@@ -113,16 +113,16 @@ func (p *TBinaryProtocol) WriteFieldBegin(name string, typeId TType, id int16) T
 	return e
 }
 
-func (p *TBinaryProtocol) WriteFieldEnd() TProtocolException {
+func (p *TBinaryProtocol) WriteFieldEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) WriteFieldStop() TProtocolException {
+func (p *TBinaryProtocol) WriteFieldStop() error {
 	e := p.WriteByte(STOP)
 	return e
 }
 
-func (p *TBinaryProtocol) WriteMapBegin(keyType TType, valueType TType, size int) TProtocolException {
+func (p *TBinaryProtocol) WriteMapBegin(keyType TType, valueType TType, size int) error {
 	e := p.WriteByte(keyType.ThriftTypeId())
 	if e != nil {
 		return e
@@ -135,11 +135,11 @@ func (p *TBinaryProtocol) WriteMapBegin(keyType TType, valueType TType, size int
 	return e
 }
 
-func (p *TBinaryProtocol) WriteMapEnd() TProtocolException {
+func (p *TBinaryProtocol) WriteMapEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) WriteListBegin(elemType TType, size int) TProtocolException {
+func (p *TBinaryProtocol) WriteListBegin(elemType TType, size int) error {
 	e := p.WriteByte(elemType.ThriftTypeId())
 	if e != nil {
 		return e
@@ -148,11 +148,11 @@ func (p *TBinaryProtocol) WriteListBegin(elemType TType, size int) TProtocolExce
 	return e
 }
 
-func (p *TBinaryProtocol) WriteListEnd() TProtocolException {
+func (p *TBinaryProtocol) WriteListEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) WriteSetBegin(elemType TType, size int) TProtocolException {
+func (p *TBinaryProtocol) WriteSetBegin(elemType TType, size int) error {
 	e := p.WriteByte(elemType.ThriftTypeId())
 	if e != nil {
 		return e
@@ -161,24 +161,24 @@ func (p *TBinaryProtocol) WriteSetBegin(elemType TType, size int) TProtocolExcep
 	return e
 }
 
-func (p *TBinaryProtocol) WriteSetEnd() TProtocolException {
+func (p *TBinaryProtocol) WriteSetEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) WriteBool(value bool) TProtocolException {
+func (p *TBinaryProtocol) WriteBool(value bool) error {
 	if value {
 		return p.WriteByte(1)
 	}
 	return p.WriteByte(0)
 }
 
-func (p *TBinaryProtocol) WriteByte(value byte) TProtocolException {
+func (p *TBinaryProtocol) WriteByte(value byte) error {
 	v := []byte{value}
 	_, e := p.trans.Write(v)
 	return newTProtocolExceptionFromError(e)
 }
 
-func (p *TBinaryProtocol) WriteI16(value int16) TProtocolException {
+func (p *TBinaryProtocol) WriteI16(value int16) error {
 	h := byte(0xff & (value >> 8))
 	l := byte(0xff & value)
 	v := []byte{h, l}
@@ -186,7 +186,7 @@ func (p *TBinaryProtocol) WriteI16(value int16) TProtocolException {
 	return newTProtocolExceptionFromError(e)
 }
 
-func (p *TBinaryProtocol) WriteI32(value int32) TProtocolException {
+func (p *TBinaryProtocol) WriteI32(value int32) error {
 	a := byte(0xff & (value >> 24))
 	b := byte(0xff & (value >> 16))
 	c := byte(0xff & (value >> 8))
@@ -196,7 +196,7 @@ func (p *TBinaryProtocol) WriteI32(value int32) TProtocolException {
 	return newTProtocolExceptionFromError(e)
 }
 
-func (p *TBinaryProtocol) WriteI64(value int64) TProtocolException {
+func (p *TBinaryProtocol) WriteI64(value int64) error {
 	a := byte(0xff & (value >> 56))
 	b := byte(0xff & (value >> 48))
 	c := byte(0xff & (value >> 40))
@@ -210,15 +210,15 @@ func (p *TBinaryProtocol) WriteI64(value int64) TProtocolException {
 	return newTProtocolExceptionFromError(err)
 }
 
-func (p *TBinaryProtocol) WriteDouble(value float64) TProtocolException {
+func (p *TBinaryProtocol) WriteDouble(value float64) error {
 	return p.WriteI64(int64(math.Float64bits(value)))
 }
 
-func (p *TBinaryProtocol) WriteString(value string) TProtocolException {
+func (p *TBinaryProtocol) WriteString(value string) error {
 	return p.WriteBinaryFromReader(strings.NewReader(value), len(value))
 }
 
-func (p *TBinaryProtocol) WriteBinary(value []byte) TProtocolException {
+func (p *TBinaryProtocol) WriteBinary(value []byte) error {
 	e := p.WriteI32(int32(len(value)))
 	if e != nil {
 		return e
@@ -227,7 +227,7 @@ func (p *TBinaryProtocol) WriteBinary(value []byte) TProtocolException {
 	return newTProtocolExceptionFromError(err)
 }
 
-func (p *TBinaryProtocol) WriteBinaryFromReader(reader io.Reader, size int) TProtocolException {
+func (p *TBinaryProtocol) WriteBinaryFromReader(reader io.Reader, size int) error {
 	e := p.WriteI32(int32(size))
 	if e != nil {
 		return e
@@ -240,7 +240,7 @@ func (p *TBinaryProtocol) WriteBinaryFromReader(reader io.Reader, size int) TPro
  * Reading methods
  */
 
-func (p *TBinaryProtocol) ReadMessageBegin() (name string, typeId TMessageType, seqId int32, err TProtocolException) {
+func (p *TBinaryProtocol) ReadMessageBegin() (name string, typeId TMessageType, seqId int32, err error) {
 	size, e := p.ReadI32()
 	if e != nil {
 		return "", typeId, 0, newTProtocolExceptionFromError(e)
@@ -280,19 +280,19 @@ func (p *TBinaryProtocol) ReadMessageBegin() (name string, typeId TMessageType, 
 	return name, typeId, seqId, nil
 }
 
-func (p *TBinaryProtocol) ReadMessageEnd() TProtocolException {
+func (p *TBinaryProtocol) ReadMessageEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) ReadStructBegin() (name string, err TProtocolException) {
+func (p *TBinaryProtocol) ReadStructBegin() (name string, err error) {
 	return
 }
 
-func (p *TBinaryProtocol) ReadStructEnd() TProtocolException {
+func (p *TBinaryProtocol) ReadStructEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) ReadFieldBegin() (name string, typeId TType, seqId int16, err TProtocolException) {
+func (p *TBinaryProtocol) ReadFieldBegin() (name string, typeId TType, seqId int16, err error) {
 	t, err := p.ReadByte()
 	typeId = TType(t)
 	if err != nil {
@@ -304,11 +304,11 @@ func (p *TBinaryProtocol) ReadFieldBegin() (name string, typeId TType, seqId int
 	return name, typeId, seqId, err
 }
 
-func (p *TBinaryProtocol) ReadFieldEnd() TProtocolException {
+func (p *TBinaryProtocol) ReadFieldEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) ReadMapBegin() (kType, vType TType, size int, err TProtocolException) {
+func (p *TBinaryProtocol) ReadMapBegin() (kType, vType TType, size int, err error) {
 	k, e := p.ReadByte()
 	if e != nil {
 		err = newTProtocolExceptionFromError(e)
@@ -330,11 +330,11 @@ func (p *TBinaryProtocol) ReadMapBegin() (kType, vType TType, size int, err TPro
 	return kType, vType, size, nil
 }
 
-func (p *TBinaryProtocol) ReadMapEnd() TProtocolException {
+func (p *TBinaryProtocol) ReadMapEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) ReadListBegin() (elemType TType, size int, err TProtocolException) {
+func (p *TBinaryProtocol) ReadListBegin() (elemType TType, size int, err error) {
 	b, e := p.ReadByte()
 	if e != nil {
 		err = newTProtocolExceptionFromError(e)
@@ -350,11 +350,11 @@ func (p *TBinaryProtocol) ReadListBegin() (elemType TType, size int, err TProtoc
 	return elemType, size, nil
 }
 
-func (p *TBinaryProtocol) ReadListEnd() TProtocolException {
+func (p *TBinaryProtocol) ReadListEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) ReadSetBegin() (elemType TType, size int, err TProtocolException) {
+func (p *TBinaryProtocol) ReadSetBegin() (elemType TType, size int, err error) {
 	b, e := p.ReadByte()
 	if e != nil {
 		err = newTProtocolExceptionFromError(e)
@@ -370,11 +370,11 @@ func (p *TBinaryProtocol) ReadSetBegin() (elemType TType, size int, err TProtoco
 	return elemType, size, nil
 }
 
-func (p *TBinaryProtocol) ReadSetEnd() TProtocolException {
+func (p *TBinaryProtocol) ReadSetEnd() error {
 	return nil
 }
 
-func (p *TBinaryProtocol) ReadBool() (bool, TProtocolException) {
+func (p *TBinaryProtocol) ReadBool() (bool, error) {
 	b, e := p.ReadByte()
 	v := true
 	if b != 1 {
@@ -383,41 +383,41 @@ func (p *TBinaryProtocol) ReadBool() (bool, TProtocolException) {
 	return v, e
 }
 
-func (p *TBinaryProtocol) ReadByte() (value byte, err TProtocolException) {
+func (p *TBinaryProtocol) ReadByte() (value byte, err error) {
 	buf := []byte{0}
 	err = p.readAll(buf)
 	return buf[0], err
 }
 
-func (p *TBinaryProtocol) ReadI16() (value int16, err TProtocolException) {
+func (p *TBinaryProtocol) ReadI16() (value int16, err error) {
 	buf := []byte{0, 0}
 	err = p.readAll(buf)
 	value = int16(binary.BigEndian.Uint16(buf))
 	return value, err
 }
 
-func (p *TBinaryProtocol) ReadI32() (value int32, err TProtocolException) {
+func (p *TBinaryProtocol) ReadI32() (value int32, err error) {
 	buf := []byte{0, 0, 0, 0}
 	err = p.readAll(buf)
 	value = int32(binary.BigEndian.Uint32(buf))
 	return value, err
 }
 
-func (p *TBinaryProtocol) ReadI64() (value int64, err TProtocolException) {
+func (p *TBinaryProtocol) ReadI64() (value int64, err error) {
 	buf := []byte{0, 0, 0, 0, 0, 0, 0, 0}
 	err = p.readAll(buf)
 	value = int64(binary.BigEndian.Uint64(buf))
 	return value, err
 }
 
-func (p *TBinaryProtocol) ReadDouble() (value float64, err TProtocolException) {
+func (p *TBinaryProtocol) ReadDouble() (value float64, err error) {
 	buf := []byte{0, 0, 0, 0, 0, 0, 0, 0}
 	err = p.readAll(buf)
 	value = math.Float64frombits(binary.BigEndian.Uint64(buf))
 	return value, err
 }
 
-func (p *TBinaryProtocol) ReadString() (value string, err TProtocolException) {
+func (p *TBinaryProtocol) ReadString() (value string, err error) {
 	size, e := p.ReadI32()
 	if e != nil {
 		return "", e
@@ -425,7 +425,7 @@ func (p *TBinaryProtocol) ReadString() (value string, err TProtocolException) {
 	return p.readStringBody(int(size))
 }
 
-func (p *TBinaryProtocol) ReadBinary() ([]byte, TProtocolException) {
+func (p *TBinaryProtocol) ReadBinary() ([]byte, error) {
 	size, e := p.ReadI32()
 	if e != nil {
 		return nil, e
@@ -439,11 +439,11 @@ func (p *TBinaryProtocol) ReadBinary() ([]byte, TProtocolException) {
 	return buf, newTProtocolExceptionFromError(err)
 }
 
-func (p *TBinaryProtocol) Flush() (err TProtocolException) {
+func (p *TBinaryProtocol) Flush() (err error) {
 	return newTProtocolExceptionFromError(p.trans.Flush())
 }
 
-func (p *TBinaryProtocol) Skip(fieldType TType) (err TProtocolException) {
+func (p *TBinaryProtocol) Skip(fieldType TType) (err error) {
 	return SkipDefaultDepth(p, fieldType)
 }
 
@@ -451,7 +451,7 @@ func (p *TBinaryProtocol) Transport() TTransport {
 	return p.trans
 }
 
-func (p *TBinaryProtocol) readAll(buf []byte) TProtocolException {
+func (p *TBinaryProtocol) readAll(buf []byte) error {
 	if e := p.checkReadLength(len(buf)); e != nil {
 		return e
 	}
@@ -464,7 +464,7 @@ func (p *TBinaryProtocol) setReadLength(readLength int) {
 	p._CheckReadLength = true
 }
 
-func (p *TBinaryProtocol) checkReadLength(length int) TProtocolException {
+func (p *TBinaryProtocol) checkReadLength(length int) error {
 	if p._CheckReadLength {
 		p._ReadLength = p._ReadLength - length
 		if p._ReadLength < 0 {
@@ -474,7 +474,7 @@ func (p *TBinaryProtocol) checkReadLength(length int) TProtocolException {
 	return nil
 }
 
-func (p *TBinaryProtocol) readStringBody(size int) (value string, err TProtocolException) {
+func (p *TBinaryProtocol) readStringBody(size int) (value string, err error) {
 	if size < 0 {
 		return "", nil
 	}

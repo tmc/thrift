@@ -25,51 +25,51 @@ const (
 )
 
 type TProtocol interface {
-	WriteMessageBegin(name string, typeId TMessageType, seqid int32) TProtocolException
-	WriteMessageEnd() TProtocolException
-	WriteStructBegin(name string) TProtocolException
-	WriteStructEnd() TProtocolException
-	WriteFieldBegin(name string, typeId TType, id int16) TProtocolException
-	WriteFieldEnd() TProtocolException
-	WriteFieldStop() TProtocolException
-	WriteMapBegin(keyType TType, valueType TType, size int) TProtocolException
-	WriteMapEnd() TProtocolException
-	WriteListBegin(elemType TType, size int) TProtocolException
-	WriteListEnd() TProtocolException
-	WriteSetBegin(elemType TType, size int) TProtocolException
-	WriteSetEnd() TProtocolException
-	WriteBool(value bool) TProtocolException
-	WriteByte(value byte) TProtocolException
-	WriteI16(value int16) TProtocolException
-	WriteI32(value int32) TProtocolException
-	WriteI64(value int64) TProtocolException
-	WriteDouble(value float64) TProtocolException
-	WriteString(value string) TProtocolException
-	WriteBinary(value []byte) TProtocolException
+	WriteMessageBegin(name string, typeId TMessageType, seqid int32) error
+	WriteMessageEnd() error
+	WriteStructBegin(name string) error
+	WriteStructEnd() error
+	WriteFieldBegin(name string, typeId TType, id int16) error
+	WriteFieldEnd() error
+	WriteFieldStop() error
+	WriteMapBegin(keyType TType, valueType TType, size int) error
+	WriteMapEnd() error
+	WriteListBegin(elemType TType, size int) error
+	WriteListEnd() error
+	WriteSetBegin(elemType TType, size int) error
+	WriteSetEnd() error
+	WriteBool(value bool) error
+	WriteByte(value byte) error
+	WriteI16(value int16) error
+	WriteI32(value int32) error
+	WriteI64(value int64) error
+	WriteDouble(value float64) error
+	WriteString(value string) error
+	WriteBinary(value []byte) error
 
-	ReadMessageBegin() (name string, typeId TMessageType, seqid int32, err TProtocolException)
-	ReadMessageEnd() TProtocolException
-	ReadStructBegin() (name string, err TProtocolException)
-	ReadStructEnd() TProtocolException
-	ReadFieldBegin() (name string, typeId TType, id int16, err TProtocolException)
-	ReadFieldEnd() TProtocolException
-	ReadMapBegin() (keyType TType, valueType TType, size int, err TProtocolException)
-	ReadMapEnd() TProtocolException
-	ReadListBegin() (elemType TType, size int, err TProtocolException)
-	ReadListEnd() TProtocolException
-	ReadSetBegin() (elemType TType, size int, err TProtocolException)
-	ReadSetEnd() TProtocolException
-	ReadBool() (value bool, err TProtocolException)
-	ReadByte() (value byte, err TProtocolException)
-	ReadI16() (value int16, err TProtocolException)
-	ReadI32() (value int32, err TProtocolException)
-	ReadI64() (value int64, err TProtocolException)
-	ReadDouble() (value float64, err TProtocolException)
-	ReadString() (value string, err TProtocolException)
-	ReadBinary() (value []byte, err TProtocolException)
+	ReadMessageBegin() (name string, typeId TMessageType, seqid int32, err error)
+	ReadMessageEnd() error
+	ReadStructBegin() (name string, err error)
+	ReadStructEnd() error
+	ReadFieldBegin() (name string, typeId TType, id int16, err error)
+	ReadFieldEnd() error
+	ReadMapBegin() (keyType TType, valueType TType, size int, err error)
+	ReadMapEnd() error
+	ReadListBegin() (elemType TType, size int, err error)
+	ReadListEnd() error
+	ReadSetBegin() (elemType TType, size int, err error)
+	ReadSetEnd() error
+	ReadBool() (value bool, err error)
+	ReadByte() (value byte, err error)
+	ReadI16() (value int16, err error)
+	ReadI32() (value int32, err error)
+	ReadI64() (value int64, err error)
+	ReadDouble() (value float64, err error)
+	ReadString() (value string, err error)
+	ReadBinary() (value []byte, err error)
 
-	Skip(fieldType TType) (err TProtocolException)
-	Flush() (err TProtocolException)
+	Skip(fieldType TType) (err error)
+	Flush() (err error)
 
 	Transport() TTransport
 }
@@ -78,12 +78,12 @@ type TProtocol interface {
 var MaxSkipDepth = 1<<31 - 1
 
 // Skips over the next data element from the provided input TProtocol object.
-func SkipDefaultDepth(prot TProtocol, typeId TType) (err TProtocolException) {
+func SkipDefaultDepth(prot TProtocol, typeId TType) (err error) {
 	return Skip(prot, typeId, MaxSkipDepth)
 }
 
 // Skips over the next data element from the provided input TProtocol object.
-func Skip(self TProtocol, fieldType TType, maxDepth int) (err TProtocolException) {
+func Skip(self TProtocol, fieldType TType, maxDepth int) (err error) {
 	switch fieldType {
 	case STOP:
 		return
