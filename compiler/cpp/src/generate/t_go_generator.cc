@@ -1847,15 +1847,15 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << ")" << endl <<
              indent() << endl <<
              indent() << "func Usage() {" << endl <<
-             indent() << "  fmt.Fprintln(os.Stderr, \"Usage of \", os.Args[0], \" [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]:\\n\")" << endl <<
+             indent() << "  fmt.Fprintln(os.Stderr, \"Usage of \", os.Args[0], \" [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]:\")" << endl <<
              indent() << "  flag.PrintDefaults()" << endl <<
-             indent() << "  fmt.Fprintln(os.Stderr, \"Functions:\\n\")" << endl;
+             indent() << "  fmt.Fprintln(os.Stderr, \"\\nFunctions:\")" << endl;
 
     for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
         string funcName((*f_iter)->get_name());
         string funcSignature(function_signature_if(*f_iter, "", true));
         f_remote <<
-                 indent() << "  fmt.Fprintln(os.Stderr, \"  " << funcName << funcSignature.substr(funcSignature.find("(")) << "\\n\")" << endl;
+                 indent() << "  fmt.Fprintln(os.Stderr, \"  " << funcName << funcSignature.substr(funcSignature.find("(")) << "\")" << endl;
     }
 
     f_remote <<
@@ -1873,7 +1873,6 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "var urlString string" << endl <<
              indent() << "var framed bool" << endl <<
              indent() << "var useHttp bool" << endl <<
-             indent() << "var help bool" << endl <<
              indent() << "var parsedUrl url.URL" << endl <<
              indent() << "var trans thrift.TTransport" << endl <<
              indent() << "_ = math.MinInt32 // will become unneeded eventually" << endl <<
@@ -1885,11 +1884,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "flag.StringVar(&urlString, \"u\", \"\", \"Specify the url\")" << endl <<
              indent() << "flag.BoolVar(&framed, \"framed\", false, \"Use framed transport\")" << endl <<
              indent() << "flag.BoolVar(&useHttp, \"http\", false, \"Use http\")" << endl <<
-             indent() << "flag.BoolVar(&help, \"help\", false, \"See usage string\")" << endl <<
              indent() << "flag.Parse()" << endl <<
-             indent() << "if help || flag.NArg() == 0 {" << endl <<
-             indent() << "  flag.Usage()" << endl <<
-             indent() << "}" << endl <<
              indent() << endl <<
              indent() << "if len(urlString) > 0 {" << endl <<
              indent() << "  parsedUrl, err := url.Parse(urlString)" << endl <<
@@ -1898,8 +1893,6 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "    flag.Usage()" << endl <<
              indent() << "  }" << endl <<
              indent() << "  host = parsedUrl.Host" << endl <<
-             //indent() << "  if len(parsedUrl.Port) == 0 { parsedUrl.Port = \"80\"; }" << endl <<
-             //indent() << "  port = int(parsedUrl.Port)" << endl <<
              indent() << "  useHttp = len(parsedUrl.Scheme) <= 0 || parsedUrl.Scheme == \"http\"" << endl <<
              indent() << "} else if useHttp {" << endl <<
              indent() << "  _, err := url.Parse(fmt.Sprint(\"http://\", host, \":\", port))" << endl <<
