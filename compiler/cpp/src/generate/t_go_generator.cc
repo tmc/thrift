@@ -252,7 +252,9 @@ private:
 
     std::ofstream f_types_;
     std::string f_types_name_;
-    std::stringstream f_consts_;
+    std::ofstream f_consts_;
+    std::string f_consts_name_;
+    std::stringstream f_const_values_;
     std::ofstream f_service_;
 
     std::string package_name_;
@@ -280,7 +282,7 @@ std::string t_go_generator::publicize(const std::string& value)
 
     // as long as we are changing things, let's change _ followed by lowercase to capital
     for (string::size_type i = 1; i < value2.size() - 1; ++i) {
-        if (value2[i] == '_' && isalpha(value2[i + 1])) {
+        if (value2[i] == '_' && islower(value2[i + 1])) {
             value2.replace(i, 2, 1, toupper(value2[i + 1]));
         }
     }
@@ -473,10 +475,13 @@ void t_go_generator::init_generator()
         target.replace(loc, 1, 1, '/');
     }
 
-    // Make output file
+    // Make output files
     f_types_name_ = package_dir_ + "/" + "ttypes.go";
     f_types_.open(f_types_name_.c_str());
-    f_consts_ << "func init() {" << endl;
+
+    f_consts_name_ = package_dir_ + "/" + "constants.go";
+    f_consts_.open(f_consts_name_.c_str());
+
     vector<t_service*> services = program_->get_services();
     vector<t_service*>::iterator sv_iter;
 
@@ -496,6 +501,13 @@ void t_go_generator::init_generator()
              go_imports_begin() <<
              render_fastbinary_includes() <<
              go_imports_end();
+
+    f_consts_ <<
+              go_package() <<
+              go_autogen_comment();
+
+    f_const_values_ << endl << "func init() {" << endl;
+
 }
 
 /**
@@ -576,12 +588,14 @@ string t_go_generator::go_imports_end()
  */
 void t_go_generator::close_generator()
 {
-    // Close types file
-    f_consts_ << "}" << endl;
-    f_types_ << f_consts_.str() << endl;
+    f_const_values_ << "}" << endl << endl;
+    f_consts_ << f_const_values_.str();
+
+    // Close types and constants files
+    f_consts_.close();
     f_types_.close();
     format_go_output(f_types_name_);
-    f_consts_.clear();
+    format_go_output(f_consts_name_);
 }
 
 /**
@@ -657,7 +671,7 @@ void t_go_generator::generate_enum(t_enum* tenum)
                       indent() << "}" << endl;
     from_string_mapping <<
                         indent() << "  }" << endl <<
-                        indent() << "  return " << tenum_name << "(-10000)" << endl <<
+                        indent() << "  return " << tenum_name << "(math.MinInt32 - 1)" << endl <<
                         indent() << "}" << endl;
     f_types_ <<
              indent() << ")" << endl <<
@@ -670,20 +684,24 @@ void t_go_generator::generate_enum(t_enum* tenum)
              indent() << "}" << endl << endl;
 }
 
+
 /**
  * Generate a constant value
  */
 void t_go_generator::generate_const(t_const* tconst)
 {
     t_type* type = tconst->get_type();
-    string name = publicize(type->get_name()) + "_" + publicize(tconst->get_name());
+    string name = publicize(tconst->get_name());
     t_const_value* value = tconst->get_value();
 
     if (type->is_base_type() || type->is_enum()) {
-        indent(f_types_) << "const " << name << " = " << render_const_value(type, value, name) << endl;
+        indent(f_consts_) << "const " << name << " = " << render_const_value(type, value, name) << endl;
     } else {
-        f_types_ <<
-                 indent() << "var " << name << " = " << render_const_value(type, value, name, true) << endl;
+        f_const_values_ <<
+                  indent() << name << " = " << render_const_value(type, value, name) << endl << endl;
+
+        f_consts_ <<
+                  indent() << "var " << name << " " << type_to_go_type(type) << endl;
     }
 }
 
@@ -737,7 +755,7 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
         indent(out) << value->get_integer();
     } else if (type->is_struct() || type->is_xception()) {
         out <<
-            "New" << publicize(type->get_name()) << "()" << endl;
+            "New" << publicize(type->get_name()) << "()";
         indent_up();
         const vector<t_field*>& fields = ((t_struct*)type)->get_members();
         vector<t_field*>::const_iterator f_iter;
@@ -758,14 +776,14 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
             }
 
             if (field_type->is_base_type() || field_type->is_enum()) {
-                out <<
-                    indent() << name << "." << publicize(v_iter->first->get_string()) << " = " << render_const_value(field_type, v_iter->second, name) << endl;
+                out << endl <<
+                    indent() << name << "." << publicize(v_iter->first->get_string()) << " = " << render_const_value(field_type, v_iter->second, name);
             } else {
                 string k(tmp("k"));
                 string v(tmp("v"));
-                out <<
+                out << endl <<
                     indent() << v << " := " << render_const_value(field_type, v_iter->second, v) << endl <<
-                    indent() << name << "." << publicize(v_iter->first->get_string()) << " = " << v << endl;
+                    indent() << name << "." << publicize(v_iter->first->get_string()) << " = " << v;
             }
         }
 
