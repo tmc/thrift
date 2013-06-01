@@ -590,6 +590,7 @@ AC_CONFIG_FILES([
   test/rb/Makefile
   tutorial/Makefile
   tutorial/cpp/Makefile
+  tutorial/go/Makefile
   tutorial/java/Makefile
   tutorial/js/Makefile
   tutorial/py/Makefile
