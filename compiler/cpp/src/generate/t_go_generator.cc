@@ -1783,6 +1783,15 @@ void t_go_generator::generate_service_client(t_service* tservice)
 void t_go_generator::generate_service_remote(t_service* tservice)
 {
     vector<t_function*> functions = tservice->get_functions();
+    t_service* parent = tservice->get_extends();
+
+    // collect inherited functions
+    while (parent != NULL) {
+        vector<t_function*> p_functions = parent->get_functions();
+        functions.insert(functions.end(), p_functions.begin(), p_functions.end());
+        parent = parent->get_extends();
+    }
+
     vector<t_function*>::iterator f_iter;
     string f_remote_name = package_dir_ + "/" + underscore(service_name_) + "-remote/" + underscore(service_name_) + "-remote.go";
     ofstream f_remote;
