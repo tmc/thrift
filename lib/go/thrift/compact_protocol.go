@@ -53,25 +53,26 @@ const (
 )
 
 var (
-	_TTypeToCompactType []TCompactType
-	_TSTOP              TField
+	tTypeToCompactType map[TType]TCompactType
+	tSTOP              TField
 )
 
 func init() {
-	_TSTOP = NewTField("", STOP, 0)
-	_TTypeToCompactType = make([]TCompactType, int(UTF16)+1)
-	_TTypeToCompactType[int(STOP)] = STOP
-	_TTypeToCompactType[int(BOOL)] = COMPACT_BOOLEAN_TRUE
-	_TTypeToCompactType[int(BYTE)] = COMPACT_BYTE
-	_TTypeToCompactType[int(I16)] = COMPACT_I16
-	_TTypeToCompactType[int(I32)] = COMPACT_I32
-	_TTypeToCompactType[int(I64)] = COMPACT_I64
-	_TTypeToCompactType[int(DOUBLE)] = COMPACT_DOUBLE
-	_TTypeToCompactType[int(STRING)] = COMPACT_BINARY
-	_TTypeToCompactType[int(LIST)] = COMPACT_LIST
-	_TTypeToCompactType[int(SET)] = COMPACT_SET
-	_TTypeToCompactType[int(MAP)] = COMPACT_MAP
-	_TTypeToCompactType[int(STRUCT)] = COMPACT_STRUCT
+	tSTOP = NewTField("", STOP, 0)
+	tTypeToCompactType = map[TType]TCompactType{
+		STOP:   STOP,
+		BOOL:   COMPACT_BOOLEAN_TRUE,
+		BYTE:   COMPACT_BYTE,
+		I16:    COMPACT_I16,
+		I32:    COMPACT_I32,
+		I64:    COMPACT_I64,
+		DOUBLE: COMPACT_DOUBLE,
+		STRING: COMPACT_BINARY,
+		LIST:   COMPACT_LIST,
+		SET:    COMPACT_SET,
+		MAP:    COMPACT_MAP,
+		STRUCT: COMPACT_STRUCT,
+	}
 }
 
 type TCompactProtocolFactory struct{}
@@ -365,7 +366,7 @@ func (p *TCompactProtocol) ReadFieldBegin() (name string, typeId TType, id int16
 
 	// if it's a stop, then we can return immediately, as the struct is over.
 	if (t & 0x0f) == STOP {
-		return _TSTOP.Name(), _TSTOP.TypeId(), int16(_TSTOP.Id()), nil
+		return tSTOP.Name(), tSTOP.TypeId(), int16(tSTOP.Id()), nil
 	}
 
 	// mask off the 4 MSB of the type header. it could contain a field id delta.
@@ -749,5 +750,5 @@ func (p *TCompactProtocol) getTType(t TCompactType) (TType, error) {
 
 // Given a TType value, find the appropriate TCompactProtocol.Types constant.
 func (p *TCompactProtocol) getCompactType(t TType) TCompactType {
-	return _TTypeToCompactType[int(t)]
+	return tTypeToCompactType[t]
 }

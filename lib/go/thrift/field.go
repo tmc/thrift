@@ -29,8 +29,6 @@ type TField interface {
 	TypeId() TType
 	Id() int
 	String() string
-	CompareTo(other interface{}) (int, bool)
-	Equals(other interface{}) bool
 }
 
 type tField struct {
@@ -75,35 +73,6 @@ func (p *tField) String() string {
 	return "<TField name:'" + p.name + "' type:" + string(p.typeId) + " field-id:" + string(p.id) + ">"
 }
 
-func (p *tField) CompareTo(other interface{}) (int, bool) {
-	if other == nil {
-		return 1, true
-	}
-	if data, ok := other.(TField); ok {
-		if p.Id() != data.Id() {
-			return compareInt(p.Id(), data.Id()), true
-		}
-		if p.TypeId() != data.TypeId() {
-			return compareByte(byte(p.TypeId()), byte(data.TypeId())), true
-		}
-		return compareString(p.Name(), data.Name()), true
-	}
-	return 0, false
-}
-
-func (p *tField) Equals(other interface{}) bool {
-	if p == nil {
-		return other == nil
-	}
-	if other == nil {
-		return false
-	}
-	if data, ok := other.(TField); ok {
-		return p.TypeId() == data.TypeId() && p.Id() == data.Id()
-	}
-	return false
-}
-
 var ANONYMOUS_FIELD TField
 
 type tFieldArray []TField
@@ -121,13 +90,11 @@ func (p tFieldArray) Swap(i, j int) {
 }
 
 type TFieldContainer interface {
-	TContainer
 	FieldNameFromFieldId(id int) string
 	FieldIdFromFieldName(name string) int
 	FieldFromFieldId(id int) TField
 	FieldFromFieldName(name string) TField
 	At(i int) TField
-	Iter() <-chan TField
 }
 
 type tFieldContainer struct {
@@ -189,88 +156,6 @@ func (p *tFieldContainer) Len() int {
 
 func (p *tFieldContainer) At(i int) TField {
 	return p.FieldFromFieldId(i)
-}
-
-func (p *tFieldContainer) Contains(data interface{}) bool {
-	if i, ok := data.(int); ok {
-		for _, field := range p.fields {
-			if field.Id() == i {
-				return true
-			}
-		}
-	} else if i, ok := data.(int16); ok {
-		for _, field := range p.fields {
-			if field.Id() == int(i) {
-				return true
-			}
-		}
-	} else if s, ok := data.(string); ok {
-		for _, field := range p.fields {
-			if field.Name() == s {
-				return true
-			}
-		}
-	} else if f, ok := data.(TField); ok {
-		for _, field := range p.fields {
-			if field.Equals(f) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (p *tFieldContainer) Equals(other interface{}) bool {
-	if other == nil {
-		return false
-	}
-	if data, ok := other.(TFieldContainer); ok {
-		if p.Len() != data.Len() {
-			return false
-		}
-		for _, field := range p.fields {
-			if !data.Contains(field) {
-				return false
-			}
-		}
-		return true
-	}
-	return false
-}
-
-func (p *tFieldContainer) CompareTo(other interface{}) (int, bool) {
-	if other == nil {
-		return 1, true
-	}
-	if data, ok := other.(TFieldContainer); ok {
-		cont, ok2 := data.(*tFieldContainer)
-		if ok2 && p == cont {
-			return 0, true
-		}
-		if cmp := compareInt(p.Len(), data.Len()); cmp != 0 {
-			return cmp, true
-		}
-		for _, field := range p.fields {
-			if cmp, ok3 := field.CompareTo(data.At(field.Id())); !ok3 || cmp != 0 {
-				return cmp, ok3
-			}
-		}
-		return 0, true
-	}
-	return 0, false
-}
-
-func (p *tFieldContainer) Iter() <-chan TField {
-	c := make(chan TField)
-	go p.iterate(c)
-	return c
-}
-
-func (p *tFieldContainer) iterate(c chan<- TField) {
-	for _, v := range p.fields {
-		c <- v
-	}
-	close(c)
 }
 
 func init() {

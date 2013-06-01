@@ -105,7 +105,7 @@ func (p *TBinaryProtocol) WriteStructEnd() error {
 }
 
 func (p *TBinaryProtocol) WriteFieldBegin(name string, typeId TType, id int16) error {
-	e := p.WriteByte(typeId.ThriftTypeId())
+	e := p.WriteByte(byte(typeId))
 	if e != nil {
 		return e
 	}
@@ -123,11 +123,11 @@ func (p *TBinaryProtocol) WriteFieldStop() error {
 }
 
 func (p *TBinaryProtocol) WriteMapBegin(keyType TType, valueType TType, size int) error {
-	e := p.WriteByte(keyType.ThriftTypeId())
+	e := p.WriteByte(byte(keyType))
 	if e != nil {
 		return e
 	}
-	e = p.WriteByte(valueType.ThriftTypeId())
+	e = p.WriteByte(byte(valueType))
 	if e != nil {
 		return e
 	}
@@ -140,7 +140,7 @@ func (p *TBinaryProtocol) WriteMapEnd() error {
 }
 
 func (p *TBinaryProtocol) WriteListBegin(elemType TType, size int) error {
-	e := p.WriteByte(elemType.ThriftTypeId())
+	e := p.WriteByte(byte(elemType))
 	if e != nil {
 		return e
 	}
@@ -153,7 +153,7 @@ func (p *TBinaryProtocol) WriteListEnd() error {
 }
 
 func (p *TBinaryProtocol) WriteSetBegin(elemType TType, size int) error {
-	e := p.WriteByte(elemType.ThriftTypeId())
+	e := p.WriteByte(byte(elemType))
 	if e != nil {
 		return e
 	}

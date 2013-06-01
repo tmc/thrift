@@ -343,7 +343,7 @@ func (p *TSimpleJSONProtocol) ReadFieldBegin() (string, TType, int16, error) {
 			if err != nil {
 				return name, STOP, 0, err
 			}
-			return name, GENERIC, -1, p.ParsePostValue()
+			return name, STOP, -1, p.ParsePostValue()
 			/*
 			   if err = p.ParsePostValue(); err != nil {
 			     return name, STOP, 0, err

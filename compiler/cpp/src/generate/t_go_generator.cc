@@ -685,9 +685,7 @@ void t_go_generator::generate_const(t_const* tconst)
         indent(f_types_) << "const " << name << " = " << render_const_value(type, value, name) << endl;
     } else {
         f_types_ <<
-                 indent() << "var " << name << " " << " " << type_to_go_type(type) << endl;
-        f_consts_ <<
-                  "  " << name << " = " << render_const_value(type, value, name) << endl;
+                 indent() << "var " << name << " = " << render_const_value(type, value, name, true) << endl;
     }
 }
 
@@ -741,8 +739,7 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
         indent(out) << value->get_integer();
     } else if (type->is_struct() || type->is_xception()) {
         out <<
-            "New" << publicize(type->get_name()) << "()" << endl <<
-            indent() << "{" << endl;
+            "New" << publicize(type->get_name()) << "()" << endl;
         indent_up();
         const vector<t_field*>& fields = ((t_struct*)type)->get_members();
         vector<t_field*>::const_iterator f_iter;
@@ -775,68 +772,57 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
         }
 
         indent_down();
-        out <<
-            indent() << "}";
     } else if (type->is_map()) {
         t_type* ktype = ((t_map*)type)->get_key_type();
         t_type* vtype = ((t_map*)type)->get_val_type();
         const map<t_const_value*, t_const_value*>& val = value->get_map();
         out <<
-            "thrift.NewTMap(" << type_to_enum(ktype) << ", " << type_to_enum(vtype) << ", " << val.size() << ")" << endl <<
-            indent() << "{" << endl;
+            "map[" << type_to_go_type(ktype) << "]" << type_to_go_type(vtype) << "{" << endl;
         indent_up();
         map<t_const_value*, t_const_value*>::const_iterator v_iter;
 
         for (v_iter = val.begin(); v_iter != val.end(); ++v_iter) {
-            string k(tmp("k"));
-            string v(tmp("v"));
             out <<
-                indent() << k << " := " << render_const_value(ktype, v_iter->first, k) << endl <<
-                indent() << v << " := " << render_const_value(vtype, v_iter->second, v) << endl <<
-                indent() << name << ".Set(" << k << ", " << v << ")" << endl;
+                indent() << render_const_value(ktype, v_iter->first, name) << ": " <<
+                render_const_value(vtype, v_iter->second, name) << "," << endl;
         }
 
         indent_down();
         out <<
-            indent() << "}" << endl;
+            indent() << "}";
     } else if (type->is_list()) {
         t_type* etype = ((t_list*)type)->get_elem_type();
         const vector<t_const_value*>& val = value->get_list();
         out <<
-            "thrift.NewTList(" << type_to_enum(etype) << ", " << val.size() << ")" << endl <<
-            indent() << "{" << endl;
+            "[]" << type_to_go_type(etype) << "{" << endl;
         indent_up();
         vector<t_const_value*>::const_iterator v_iter;
 
         for (v_iter = val.begin(); v_iter != val.end(); ++v_iter) {
-            string v(tmp("v"));
             out <<
-                indent() << v << " := " << render_const_value(etype, *v_iter, v) << endl <<
-                indent() << name << ".Push(" << v << ")" << endl;
+                indent() << render_const_value(etype, *v_iter, name) << ", ";
         }
 
         indent_down();
         out <<
-            indent() << "}" << endl;
+            indent() << "}";
     } else if (type->is_set()) {
         t_type* etype = ((t_set*)type)->get_elem_type();
         const vector<t_const_value*>& val = value->get_list();
         out <<
-            "thrift.NewTSet(" << type_to_enum(etype) << ", " << val.size() << ")" << endl <<
-            indent() << "{" << endl;
+            "map[" << type_to_go_type(etype) << "]bool{" << endl;
         indent_up();
         vector<t_const_value*>::const_iterator v_iter;
 
         for (v_iter = val.begin(); v_iter != val.end(); ++v_iter) {
-            string v(tmp("v"));
             out <<
-                indent() << v << " := " << render_const_value(etype, *v_iter, v) << endl <<
-                indent() << name << ".Add(" << v << ")" << endl;
+                indent() << render_const_value(etype, *v_iter, name) << ": true," << endl;
+
         }
 
         indent_down();
         out <<
-            indent() << "}" << endl;
+            indent() << "}";
     } else {
         throw "CANNOT GENERATE CONSTANT FOR TYPE: " + type->get_name();
     }
@@ -947,7 +933,7 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
         indent() << "}" << endl << endl <<
         indent() << "func New" << tstruct_name << "() *" << tstruct_name << " {" << endl <<
         indent() << "  output := &" << tstruct_name << "{" << endl <<
-        indent() << "    TStruct:thrift.NewTStruct(\"" << escape_string(tstruct->get_name()) << "\", []thrift.TField{" << endl;
+        indent() << "    TStruct: thrift.NewTStruct(\"" << escape_string(tstruct->get_name()) << "\", []thrift.TField{" << endl;
     indent_up();
     indent_up();
 
@@ -959,11 +945,6 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
 
     out <<
         indent() << "})," << endl;
-    indent_down();
-    out <<
-        indent() << "}" << endl <<
-        indent() << "{" << endl;
-    indent_up();
 
     for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
         // Initialize fields
@@ -971,15 +952,14 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
         const string escaped_field_name = escape_string(base_field_name);
         const string go_safe_name = variable_name_to_go_name(escaped_field_name);
         const string publicized_name = publicize(go_safe_name);
-        const string full_field_name = "output." + publicized_name;
         const t_type* type = get_true_type((*m_iter)->get_type());
         const bool has_default_value = (*m_iter)->get_value() != NULL;
         const bool type_is_enum = type->is_enum();
 
         if (has_default_value) {
-            out << indent() << full_field_name << " = " << render_field_default_value(*m_iter, base_field_name) << endl;
+            out << indent() << publicized_name << ": " << render_field_default_value(*m_iter, base_field_name) << "," << endl;
         } else if (type_is_enum) {
-            out << indent() << full_field_name << " = math.MinInt32 - 1" << endl;
+            out << indent() << publicized_name << ": math.MinInt32 - 1, // unset sentinal value" << endl;
         }
     }
 
@@ -1010,19 +990,6 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
         indent() << "  }" << endl <<
         indent() << "  return fmt.Sprintf(\"" << escape_string(tstruct_name) << "(%+v)\", *p)" << endl <<
         indent() << "}" << endl << endl;
-    // Equality and inequality methods that compare by value
-    out <<
-        indent() << "func (p *" << tstruct_name << ") CompareTo(other interface{}) (int, bool) {" << endl <<
-        indent() << "  if other == nil {" << endl <<
-        indent() << "    return 1, true" << endl <<
-        indent() << "  }" << endl <<
-        indent() << "  data, ok := other.(*" << tstruct_name << ")" << endl <<
-        indent() << "  if !ok {" << endl <<
-        indent() << "    return 0, false" << endl <<
-        indent() << "  }" << endl <<
-        indent() << "  return thrift.TType(thrift.STRUCT).Compare(p, data)" << endl <<
-        indent() << "}" << endl << endl;
-    // Equality and inequality methods that compare by value
     out <<
         indent() << "func (p *" << tstruct_name << ") AttributeByFieldId(id int) interface{} {" << endl <<
         indent() << "  switch id {" << endl <<
@@ -1189,9 +1156,6 @@ void t_go_generator::generate_go_struct_reader(ofstream& out,
         indent() << "  fieldId = int16(p.FieldIdFromFieldName(fieldName))" << endl <<
         indent() << "} else if fieldName == \"\" {" << endl <<
         indent() << "  fieldName = p.FieldNameFromFieldId(int(fieldId))" << endl <<
-        indent() << "}" << endl <<
-        indent() << "if fieldTypeId == thrift.GENERIC {" << endl <<
-        indent() << "  fieldTypeId = p.FieldFromFieldId(int(fieldId)).TypeId()" << endl <<
         indent() << "}" << endl <<
         indent() << "if err != nil {" << endl <<
         indent() << "  return thrift.NewTProtocolExceptionReadField(int(fieldId), fieldName, p.ThriftName(), err)" << endl <<
@@ -2570,7 +2534,7 @@ void t_go_generator::generate_deserialize_field(ofstream &out,
             out << "ReadI32()";
         }
 
-        string structName("\"\"");
+        string structName;
 
         if (!prefix.size() || prefix.find(".") == string::npos) {
             structName = "\"\"";
@@ -2636,14 +2600,6 @@ void t_go_generator::generate_deserialize_container(ofstream &out,
         string prefix,
         string err)
 {
-    string size = tmp("_size");
-    string ktype = tmp("_ktype");
-    string vtype = tmp("_vtype");
-    string etype = tmp("_etype");
-    t_field fsize(g_type_i32, size);
-    t_field fktype(g_type_byte, ktype);
-    t_field fvtype(g_type_byte, vtype);
-    t_field fetype(g_type_byte, etype);
     string eq(" = ");
 
     if (declare) {
@@ -2652,43 +2608,45 @@ void t_go_generator::generate_deserialize_container(ofstream &out,
 
     // Declare variables, read header
     if (ttype->is_map()) {
+        t_map* t = (t_map*)ttype;
         out <<
-            indent() << ktype << ", " << vtype << ", " << size << ", " << err << " := iprot.ReadMapBegin()" << endl <<
+            indent() << "_, _, size, " << err << " := iprot.ReadMapBegin()" << endl <<
             indent() << "if " << err << " != nil {" << endl <<
             indent() << "  return thrift.NewTProtocolExceptionReadField(" <<
             -1 << ", \"" <<
             escape_string(prefix) << "\", \"\", " <<
             err << ")" << endl <<
             indent() << "}" << endl <<
-            indent() << prefix << eq << "thrift.NewTMap(" << ktype << ", " << vtype << ", " << size << ")" << endl;
+            indent() << prefix << eq << "make(map[" << type_to_go_type(t->get_key_type()) << "]" <<  type_to_go_type(t->get_val_type()) << ", size)" << endl;
     } else if (ttype->is_set()) {
+        t_set* t = (t_set*)ttype;
         out <<
-            indent() << etype << ", " << size << ", " << err << " := iprot.ReadSetBegin()" << endl <<
+            indent() << "_, size, " << err << " := iprot.ReadSetBegin()" << endl <<
             indent() << "if " << err << " != nil {" << endl <<
             indent() << "  return thrift.NewTProtocolExceptionReadField(" <<
             -1 << ", \"" <<
             escape_string(prefix) << "\", \"\", " <<
             err << ")" << endl <<
             indent() << "}" << endl <<
-            indent() << prefix << eq << "thrift.NewTSet(" << etype << ", " << size << ")" << endl;
+            indent() << prefix << eq << "make(map[" << type_to_go_type(t->get_elem_type()) << "]bool, size)" << endl;
     } else if (ttype->is_list()) {
+        t_list* t = (t_list*)ttype;
         out <<
-            indent() << etype << ", " << size << ", " << err << " := iprot.ReadListBegin()" << endl <<
+            indent() << "_, size, " << err << " := iprot.ReadListBegin()" << endl <<
             indent() << "if " << err << " != nil {" << endl <<
             indent() << "  return thrift.NewTProtocolExceptionReadField(" <<
             -1 << ", \"" <<
             escape_string(prefix) << "\", \"\", " <<
             err << ")" << endl <<
             indent() << "}" << endl <<
-            indent() << prefix << eq << "thrift.NewTList(" << etype << ", " << size << ")" << endl;
+            indent() << prefix << eq << "make([]" << type_to_go_type(t->get_elem_type()) << ", 0, size)" << endl;
     } else {
         throw "INVALID TYPE IN generate_deserialize_container '" + ttype->get_name() + "' for prefix '" + prefix + "'";
     }
 
     // For loop iterates over elements
-    string i = tmp("_i");
     out <<
-        indent() << "for " << i << ":= 0; " << i << " < " << size << "; " << i << "++ {" << endl;
+        indent() << "for i := 0; i < size; i ++ {" << endl;
     indent_up();
 
     if (ttype->is_map()) {
@@ -2745,7 +2703,8 @@ void t_go_generator::generate_deserialize_map_element(ofstream &out,
     generate_deserialize_field(out, &fkey, true);
     generate_deserialize_field(out, &fval, true);
     indent(out) <<
-                prefix << ".Set(" << key << ", " << val << ")" << endl;
+                prefix << "[" << key << "] = " << val << endl;
+
 }
 
 /**
@@ -2761,7 +2720,7 @@ void t_go_generator::generate_deserialize_set_element(ofstream &out,
     t_field felem(tset->get_elem_type(), elem);
     generate_deserialize_field(out, &felem, true, "", err);
     indent(out) <<
-                prefix << ".Add(" << elem << ")" << endl;
+                prefix << "[" << elem << "] = true" << endl;
 }
 
 /**
@@ -2777,7 +2736,7 @@ void t_go_generator::generate_deserialize_list_element(ofstream &out,
     t_field felem(tlist->get_elem_type(), elem);
     generate_deserialize_field(out, &felem, true, "", err);
     indent(out) <<
-                prefix << ".Push(" << elem << ")" << endl;
+                prefix << " = append(" << prefix << ", " << elem << ")" << endl;
 }
 
 
@@ -2863,7 +2822,14 @@ void t_go_generator::generate_serialize_field(ofstream &out,
             out << "WriteI32(int32(" << name << "))";
         }
 
-        string structName = (prefix.size()) ? prefix + "ThriftName()" : "\"\"";
+        string structName;
+
+        if (!prefix.size() || prefix.find(".") == string::npos) {
+            structName = "\"\"";
+        } else {
+            structName = prefix + "ThriftName()";
+        }
+
         out << endl <<
             indent() << "if " << err << " != nil { return thrift.NewTProtocolExceptionWriteField("
             << tfield->get_key()
@@ -2901,7 +2867,7 @@ void t_go_generator::generate_serialize_container(ofstream &out,
             indent() << err << " = oprot.WriteMapBegin(" <<
             type_to_enum(((t_map*)ttype)->get_key_type()) << ", " <<
             type_to_enum(((t_map*)ttype)->get_val_type()) << ", " <<
-            prefix << ".Len())" << endl <<
+            "len(" << prefix << "))" << endl <<
             indent() << "if " << err << " != nil { return thrift.NewTProtocolExceptionWriteField("
             << -1
             << ", \"" << escape_string(ttype->get_name())
@@ -2910,7 +2876,7 @@ void t_go_generator::generate_serialize_container(ofstream &out,
         out <<
             indent() << err << " = oprot.WriteSetBegin(" <<
             type_to_enum(((t_set*)ttype)->get_elem_type()) << ", " <<
-            prefix << ".Len())" << endl <<
+            "len(" << prefix << "))" << endl <<
             indent() << "if " << err << " != nil { return thrift.NewTProtocolExceptionWriteField("
             << -1
             << ", \"" << escape_string(ttype->get_name())
@@ -2919,7 +2885,7 @@ void t_go_generator::generate_serialize_container(ofstream &out,
         out <<
             indent() << err << " = oprot.WriteListBegin(" <<
             type_to_enum(((t_list*)ttype)->get_elem_type()) << ", " <<
-            prefix << ".Len())" << endl <<
+            "len(" << prefix << "))" << endl <<
             indent() << "if " << err << " != nil { return thrift.NewTProtocolExceptionWriteField("
             << -1
             << ", \"" << escape_string(ttype->get_name())
@@ -2929,37 +2895,28 @@ void t_go_generator::generate_serialize_container(ofstream &out,
     }
 
     if (ttype->is_map()) {
-        string miter = tmp("Miter");
-        string kiter = tmp("Kiter");
-        string viter = tmp("Viter");
         t_map* tmap = (t_map*)ttype;
         out <<
-            indent() << "for " << miter << " := range " << prefix << ".Iter() {" << endl <<
-            indent() << "  " << kiter << ", " << viter << " := " << miter << ".Key().(" << type_to_go_type(tmap->get_key_type()) << "), " << miter << ".Value().(" << type_to_go_type(tmap->get_val_type()) << ")" << endl;
+            indent() << "for k,v := range " << prefix << " {" << endl;
         indent_up();
-        generate_serialize_map_element(out, tmap, kiter, viter);
+        generate_serialize_map_element(out, tmap, "k", "v");
         indent_down();
         indent(out) << "}" << endl;
     } else if (ttype->is_set()) {
         t_set* tset = (t_set*)ttype;
-        string iter = tmp("Iter");
-        string iter2 = tmp("Iter");
         out <<
-            indent() << "for " << iter << " := " << prefix << ".Front(); " << iter << " != nil; " << iter << " = " << iter << ".Next() {" << endl <<
-            indent() << "  " << iter2 << " := " << iter << ".Value.(" << type_to_go_type(tset->get_elem_type()) << ")" << endl;
+            indent() << "for v, _ := range " << prefix << " {" << endl;
         indent_up();
-        generate_serialize_set_element(out, tset, iter2);
+        generate_serialize_set_element(out, tset, "v");
         indent_down();
         indent(out) << "}" << endl;
     } else if (ttype->is_list()) {
         t_list* tlist = (t_list*)ttype;
-        string iter = tmp("Iter");
-        string iter2 = tmp("Iter");
         out <<
-            indent() << "for " << iter << " := range " << prefix << ".Iter() {" << endl <<
-            indent() << "  " << iter2 << " := " << iter << ".(" << type_to_go_type(tlist->get_elem_type()) << ")" << endl;
+            indent() << "for _, v := range " << prefix << " {" << endl;
+
         indent_up();
-        generate_serialize_list_element(out, tlist, iter2);
+        generate_serialize_list_element(out, tlist, "v");
         indent_down();
         indent(out) << "}" << endl;
     }
@@ -2998,10 +2955,10 @@ void t_go_generator::generate_serialize_map_element(ofstream &out,
         string viter,
         string err)
 {
-    t_field kfield(tmap->get_key_type(), kiter);
-    generate_serialize_field(out, &kfield, "", err);
-    t_field vfield(tmap->get_val_type(), viter);
-    generate_serialize_field(out, &vfield, "", err);
+    t_field kfield(tmap->get_key_type(), "");
+    generate_serialize_field(out, &kfield, kiter, err);
+    t_field vfield(tmap->get_val_type(), "");
+    generate_serialize_field(out, &vfield, viter, err);
 }
 
 /**
@@ -3009,11 +2966,11 @@ void t_go_generator::generate_serialize_map_element(ofstream &out,
  */
 void t_go_generator::generate_serialize_set_element(ofstream &out,
         t_set* tset,
-        string iter,
+        string prefix,
         string err)
 {
-    t_field efield(tset->get_elem_type(), iter);
-    generate_serialize_field(out, &efield, "", err);
+    t_field efield(tset->get_elem_type(), "");
+    generate_serialize_field(out, &efield, prefix, err);
 }
 
 /**
@@ -3021,11 +2978,11 @@ void t_go_generator::generate_serialize_set_element(ofstream &out,
  */
 void t_go_generator::generate_serialize_list_element(ofstream &out,
         t_list* tlist,
-        string iter,
+        string prefix,
         string err)
 {
-    t_field efield(tlist->get_elem_type(), iter);
-    generate_serialize_field(out, &efield, "", err);
+    t_field efield(tlist->get_elem_type(), "");
+    generate_serialize_field(out, &efield, prefix, err);
 }
 
 /**
@@ -3317,7 +3274,7 @@ string t_go_generator::type_to_go_type(t_type* type)
             return "bool";
 
         case t_base_type::TYPE_BYTE:
-            return "byte";
+            return "int8";
 
         case t_base_type::TYPE_I16:
             return "int16";
@@ -3336,21 +3293,18 @@ string t_go_generator::type_to_go_type(t_type* type)
     } else if (type->is_struct() || type->is_xception()) {
         return string("*") + publicize(type->get_name());
     } else if (type->is_map()) {
-        return "thrift.TMap";
-        //t_map* t = (t_map*)type;
-        //string keyType = type_to_go_type(t->get_key_type());
-        //string valueType = type_to_go_type(t->get_val_type());
-        //return string("map[") + keyType + "]" + valueType;
+        t_map* t = (t_map*)type;
+        string keyType = type_to_go_type(t->get_key_type());
+        string valueType = type_to_go_type(t->get_val_type());
+        return string("map[") + keyType + "]" + valueType;
     } else if (type->is_set()) {
-        return "thrift.TSet";
-        //t_set* t = (t_set*)type;
-        //string elemType = type_to_go_type(t->get_elem_type());
-        //return string("[]") + elemType;
+        t_set* t = (t_set*)type;
+        string elemType = type_to_go_type(t->get_elem_type());
+        return string("map[") + elemType + string("]bool");
     } else if (type->is_list()) {
-        return "thrift.TList";
-        //t_list* t = (t_list*)type;
-        //string elemType = type_to_go_type(t->get_elem_type());
-        //return string("[]") + elemType;
+        t_list* t = (t_list*)type;
+        string elemType = type_to_go_type(t->get_elem_type());
+        return string("[]") + elemType;
     } else if (type->is_typedef()) {
         return publicize(((t_typedef*)type)->get_symbolic());
     }
