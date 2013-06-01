@@ -630,31 +630,3 @@ func TestWriteSimpleJSONProtocolMap(t *testing.T) {
 	}
 	trans.Close()
 }
-
-func TestReadWriteSimpleJSONStruct(t *testing.T) {
-	thetype := "struct"
-	trans := NewTMemoryBuffer()
-	p := NewTSimpleJSONProtocol(trans)
-	orig := NewWork()
-	orig.Num1 = 25
-	orig.Num2 = 102
-	orig.Op = ADD
-	orig.Comment = "Add: 25 + 102"
-	if e := orig.Write(p); e != nil {
-		t.Fatalf("Unable to write %s value %#v due to error: %s", thetype, orig, e.Error())
-	}
-	t.Log("Memory buffer contents: ", trans.String())
-	read := NewWork()
-	e := read.Read(p)
-	t.Logf("Read %s value: %#v", thetype, read)
-	if e != nil {
-		t.Fatalf("Unable to read %s due to error: %s", thetype, e.Error())
-	}
-	if !orig.Equals(read) {
-		t.Fatalf("Original Write != Read: %#v != %#v ", orig, read)
-	}
-}
-
-func TestReadWriteSimpleJSONProtocol(t *testing.T) {
-	ReadWriteProtocolTest(t, NewTSimpleJSONProtocolFactory())
-}

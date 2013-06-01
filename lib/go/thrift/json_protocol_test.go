@@ -637,36 +637,3 @@ func TestWriteJSONProtocolMap(t *testing.T) {
 	}
 	trans.Close()
 }
-
-func TestReadWriteJSONStruct(t *testing.T) {
-	thetype := "struct"
-	trans := NewTMemoryBuffer()
-	p := NewTJSONProtocol(trans)
-	orig := NewWork()
-	orig.Num1 = 25
-	orig.Num2 = 102
-	orig.Op = ADD
-	orig.Comment = "Add: 25 + 102"
-	if e := orig.Write(p); e != nil {
-		t.Fatalf("Unable to write %s value %#v due to error: %s", thetype, orig, e.Error())
-	}
-	p.Flush()
-	t.Log("Memory buffer contents: ", trans.String())
-	expectedString := "{\"1\":{\"i32\":25},\"2\":{\"i32\":102},\"3\":{\"i32\":1},\"4\":{\"str\":\"Add: 25 + 102\"}}"
-	if expectedString != trans.String() {
-		t.Fatalf("Expected JSON Struct with value %#v but have %#v", expectedString, trans.String())
-	}
-	read := NewWork()
-	e := read.Read(p)
-	t.Logf("Read %s value: %#v", thetype, read)
-	if e != nil {
-		t.Fatalf("Unable to read %s due to error: %s", thetype, e.Error())
-	}
-	if !orig.Equals(read) {
-		t.Fatalf("Original Write != Read: %#v != %#v ", orig, read)
-	}
-}
-
-func TestReadWriteJSONProtocol(t *testing.T) {
-	ReadWriteProtocolTest(t, NewTJSONProtocolFactory())
-}
