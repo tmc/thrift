@@ -45,7 +45,7 @@ func (p *StreamTransportFactory) GetTransport(trans TTransport) TTransport {
 				return NewStreamTransportRW(t.Reader.(io.ReadWriter))
 			}
 			if t.Reader != nil && t.Writer != nil {
-				return NewStreamTransportRAndW(t.Reader, t.Writer)
+				return NewStreamTransport(t.Reader, t.Writer)
 			}
 			if t.Reader != nil && t.Writer == nil {
 				return NewStreamTransportR(t.Reader)
@@ -53,14 +53,14 @@ func (p *StreamTransportFactory) GetTransport(trans TTransport) TTransport {
 			if t.Reader == nil && t.Writer != nil {
 				return NewStreamTransportW(t.Writer)
 			}
-			return NewStreamTransportDefault()
+			return &StreamTransport{}
 		}
 	}
 	if p.IsReadWriter {
 		return NewStreamTransportRW(p.Reader.(io.ReadWriter))
 	}
 	if p.Reader != nil && p.Writer != nil {
-		return NewStreamTransportRAndW(p.Reader, p.Writer)
+		return NewStreamTransport(p.Reader, p.Writer)
 	}
 	if p.Reader != nil && p.Writer == nil {
 		return NewStreamTransportR(p.Reader)
@@ -68,15 +68,15 @@ func (p *StreamTransportFactory) GetTransport(trans TTransport) TTransport {
 	if p.Reader == nil && p.Writer != nil {
 		return NewStreamTransportW(p.Writer)
 	}
-	return NewStreamTransportDefault()
+	return &StreamTransport{}
 }
 
 func NewStreamTransportFactory(reader io.Reader, writer io.Writer, isReadWriter bool) *StreamTransportFactory {
 	return &StreamTransportFactory{Reader: reader, Writer: writer, IsReadWriter: isReadWriter}
 }
 
-func NewStreamTransportDefault() *StreamTransport {
-	return &StreamTransport{}
+func NewStreamTransport(r io.Reader, w io.Writer) *StreamTransport {
+	return &StreamTransport{Reader: bufio.NewReader(r), Writer: bufio.NewWriter(w)}
 }
 
 func NewStreamTransportR(r io.Reader) *StreamTransport {
@@ -87,15 +87,9 @@ func NewStreamTransportW(w io.Writer) *StreamTransport {
 	return &StreamTransport{Writer: bufio.NewWriter(w)}
 }
 
-func NewStreamTransportRAndW(r io.Reader, w io.Writer) *StreamTransport {
-	return &StreamTransport{Reader: bufio.NewReader(r), Writer: bufio.NewWriter(w)}
-}
-
 func NewStreamTransportRW(rw io.ReadWriter) *StreamTransport {
-	// bufio has a bug where once a Reader hits EOF, a new Write never brings the reader out of EOF
-	// even if reader and writer use the same underlier
-	//bufrw := bufio.NewReadWriter(bufio.NewReader(rw), bufio.NewWriter(rw));
-	return &StreamTransport{Reader: rw, Writer: rw, IsReadWriter: true}
+	bufrw := bufio.NewReadWriter(bufio.NewReader(rw), bufio.NewWriter(rw))
+	return &StreamTransport{Reader: bufrw, Writer: bufrw, IsReadWriter: true}
 }
 
 // (The streams must already be open at construction time, so this should

@@ -144,17 +144,15 @@ func ReadWriteProtocolTest(t *testing.T, protocolFactory TProtocolFactory) {
 		trans.Close()
 	}
 
-	// this test doesn't work in all cases due to EOF issues between
-	// buffer read and buffer write when using the same bufio for both
-	//for _, tf := range transports {
-	//  trans := tf.GetTransport(nil)
-	//  p := GetProtocol(trans);
-	//  ReadWriteI64(t, p, trans);
-	//  ReadWriteDouble(t, p, trans);
-	//  ReadWriteBinary(t, p, trans);
-	//  ReadWriteByte(t, p, trans);
-	//  trans.Close()
-	//}
+	for _, tf := range transports {
+	  trans := tf.GetTransport(nil)
+	  p := protocolFactory.GetProtocol(trans);
+	  ReadWriteI64(t, p, trans);
+	  ReadWriteDouble(t, p, trans);
+	  ReadWriteBinary(t, p, trans);
+	  ReadWriteByte(t, p, trans);
+	  trans.Close()
+	}
 
 }
 
