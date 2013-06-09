@@ -1680,7 +1680,7 @@ void t_go_generator::generate_service_client(t_service* tservice)
         string args(tmp("args"));
         f_service_ <<
                    indent() << "oprot := p.OutputProtocol" << endl <<
-                   indent() << "if oprot != nil {" << endl <<
+                   indent() << "if oprot == nil {" << endl <<
                    indent() << "  oprot = p.ProtocolFactory.GetProtocol(p.Transport)" << endl <<
                    indent() << "  p.OutputProtocol = oprot" << endl <<
                    indent() << "}" << endl <<
