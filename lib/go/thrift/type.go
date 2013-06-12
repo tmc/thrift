@@ -43,34 +43,26 @@ const (
 	BINARY = 18
 )
 
+var typeNames = map[int]string{
+	STOP:   "STOP",
+	VOID:   "VOID",
+	BOOL:   "BOOL",
+	BYTE:   "BYTE",
+	I16:    "I16",
+	I32:    "I32",
+	I64:    "I64",
+	STRING: "STRING",
+	STRUCT: "STRUCT",
+	MAP:    "MAP",
+	SET:    "SET",
+	LIST:   "LIST",
+	UTF8:   "UTF8",
+	UTF16:  "UTF16",
+}
+
 func (p TType) String() string {
-	switch p {
-	case STOP:
-		return "STOP"
-	case VOID:
-		return "VOID"
-	case BOOL:
-		return "BOOL"
-	case BYTE:
-		return "BYTE"
-	case DOUBLE:
-		return "DOUBLE"
-	case I16:
-		return "I16"
-	case I32:
-		return "I32"
-	case I64:
-		return "I64"
-	case STRING:
-		return "STRING"
-	case STRUCT:
-		return "STRUCT"
-	case MAP:
-		return "MAP"
-	case SET:
-		return "SET"
-	case LIST:
-		return "LIST"
+	if s, ok := typeNames[int(p)]; ok {
+		return s
 	}
 	return "Unknown"
 }
