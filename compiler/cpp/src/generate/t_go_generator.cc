@@ -1397,16 +1397,16 @@ void t_go_generator::generate_service_interface(t_service* tservice)
     string extends = "";
     string extends_if = "";
     string serviceName(publicize(tservice->get_name()));
-    string interfaceName = "I" + serviceName;
+    string interfaceName = serviceName;
 
     if (tservice->get_extends() != NULL) {
         extends = type_name(tservice->get_extends());
         size_t index = extends.rfind(".");
 
         if (index != string::npos) {
-            extends_if = "\n" + indent() + "  " + extends.substr(0, index + 1) + "I" + publicize(extends.substr(index + 1)) + "\n";
+            extends_if = "\n" + indent() + "  " + extends.substr(0, index + 1) + publicize(extends.substr(index + 1)) + "\n";
         } else {
-            extends_if = "\n" + indent() + "I" + publicize(extends) + "\n";
+            extends_if = "\n" + indent() + publicize(extends) + "\n";
         }
     }
 
@@ -1557,7 +1557,7 @@ void t_go_generator::generate_service_client(t_service* tservice)
         }
         */
         f_service_ <<
-                   indent() << "err = p.Send" << funname << "(";
+                   indent() << "if err = p.send" << funname << "(";
         bool first = true;
 
         for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
@@ -1570,12 +1570,11 @@ void t_go_generator::generate_service_client(t_service* tservice)
             f_service_ << variable_name_to_go_name((*fld_iter)->get_name());
         }
 
-        f_service_ << ")" << endl <<
-                   indent() << "if err != nil { return }" << endl;
+        f_service_ << "); err != nil { return }" << endl;
 
         if (!(*f_iter)->is_oneway()) {
             f_service_ <<
-                       indent() << "return p.Recv" << funname << "()" << endl;
+                       indent() << "return p.recv" << funname << "()" << endl;
         } else {
             f_service_ <<
                        indent() << "return" << endl;
@@ -1584,7 +1583,7 @@ void t_go_generator::generate_service_client(t_service* tservice)
         indent_down();
         f_service_ <<
                    indent() << "}" << endl << endl <<
-                   indent() << "func (p *" << serviceName << "Client) Send" << function_signature(*f_iter) << "(err error) {" << endl;
+                   indent() << "func (p *" << serviceName << "Client) send" << function_signature(*f_iter) << "(err error) {" << endl;
         indent_up();
         std::string argsname = privatize((*f_iter)->get_name()) + "Args";
         // Serialize the request header
@@ -1618,7 +1617,7 @@ void t_go_generator::generate_service_client(t_service* tservice)
             std::string resultname = privatize((*f_iter)->get_name()) + "Result";
             // Open function
             f_service_ << endl <<
-                       indent() << "func (p *" << serviceName << "Client) Recv" << publicize((*f_iter)->get_name()) <<
+                       indent() << "func (p *" << serviceName << "Client) recv" << publicize((*f_iter)->get_name()) <<
                        "() (";
 
             if (!(*f_iter)->get_returntype()->is_void()) {
@@ -2152,11 +2151,8 @@ void t_go_generator::generate_service_server(t_service* tservice)
     if (extends_processor.empty()) {
         f_service_ <<
                    indent() << "type " << serviceName << "Processor struct {" << endl <<
-                   indent() << "  handler I" << serviceName << endl <<
                    indent() << "  processorMap map[string]thrift.TProcessorFunction" << endl <<
-                   indent() << "}" << endl << endl <<
-                   indent() << "func (p *" << serviceName << "Processor) Handler() I" << serviceName << " {" << endl <<
-                   indent() << "  return p.handler" << endl <<
+                   indent() << "  handler " << serviceName << endl <<
                    indent() << "}" << endl << endl <<
                    indent() << "func (p *" << serviceName << "Processor) AddToProcessorMap(key string, processor thrift.TProcessorFunction) {" << endl <<
                    indent() << "  p.processorMap[key] = processor" << endl <<
@@ -2168,7 +2164,7 @@ void t_go_generator::generate_service_server(t_service* tservice)
                    indent() << "func (p *" << serviceName << "Processor) ProcessorMap() map[string]thrift.TProcessorFunction {" << endl <<
                    indent() << "  return p.processorMap" << endl <<
                    indent() << "}" << endl << endl <<
-                   indent() << "func New" << serviceName << "Processor(handler I" << serviceName << ") *" << serviceName << "Processor {" << endl << endl <<
+                   indent() << "func New" << serviceName << "Processor(handler " << serviceName << ") *" << serviceName << "Processor {" << endl << endl <<
                    indent() << "  " << self << " := &" << serviceName << "Processor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}" << endl;
 
         for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
@@ -2200,22 +2196,10 @@ void t_go_generator::generate_service_server(t_service* tservice)
     } else {
         f_service_ <<
                    indent() << "type " << serviceName << "Processor struct {" << endl <<
-                   indent() << "  super *" << extends_processor << endl <<
+                   indent() << "  *" << extends_processor << endl <<
                    indent() << "}" << endl << endl <<
-                   indent() << "func (p *" << serviceName << "Processor) Handler() I" << serviceName << " {" << endl <<
-                   indent() << "  return p.super.Handler().(I" << serviceName << ")" << endl <<
-                   indent() << "}" << endl << endl <<
-                   indent() << "func (p *" << serviceName << "Processor) AddToProcessorMap(key string, processor thrift.TProcessorFunction) {" << endl <<
-                   indent() << "  p.super.AddToProcessorMap(key, processor)" << endl <<
-                   indent() << "}" << endl << endl <<
-                   indent() << "func (p *" << serviceName << "Processor) GetProcessorFunction(key string) (processor thrift.TProcessorFunction, exists bool) {" << endl <<
-                   indent() << "  return p.super.GetProcessorFunction(key)" << endl <<
-                   indent() << "}" << endl << endl <<
-                   indent() << "func (p *" << serviceName << "Processor) ProcessorMap() map[string]thrift.TProcessorFunction {" << endl <<
-                   indent() << "  return p.super.ProcessorMap()" << endl <<
-                   indent() << "}" << endl << endl <<
-                   indent() << "func New" << serviceName << "Processor(handler I" << serviceName << ") *" << serviceName << "Processor {" << endl <<
-                   indent() << "  " << self << " := &" << serviceName << "Processor{super: " << extends_processor_new << "(handler)}" << endl;
+                   indent() << "func New" << serviceName << "Processor(handler " << serviceName << ") *" << serviceName << "Processor {" << endl <<
+                   indent() << "  " << self << " := &" << serviceName << "Processor{" << extends_processor_new << "(handler)}" << endl;
 
         for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
             string escapedFuncName(escape_string((*f_iter)->get_name()));
@@ -2225,9 +2209,6 @@ void t_go_generator::generate_service_server(t_service* tservice)
 
         f_service_ <<
                    indent() << "  return " << self << endl <<
-                   indent() << "}" << endl << endl <<
-                   indent() << "func (p *" << serviceName << "Processor) Process(iprot, oprot thrift.TProtocol) (bool, thrift.TException) {" << endl <<
-                   indent() << "  return p.super.Process(iprot, oprot)" << endl <<
                    indent() << "}" << endl << endl;
     }
 
@@ -2256,7 +2237,7 @@ void t_go_generator::generate_process_function(t_service* tservice,
     vector<t_field*>::const_iterator x_iter;
     f_service_ <<
                indent() << "type " << processorName << " struct {" << endl <<
-               indent() << "  handler I" << publicize(tservice->get_name()) << endl <<
+               indent() << "  handler " << publicize(tservice->get_name()) << endl <<
                indent() << "}" << endl << endl <<
                indent() << "func (p *" << processorName << ") Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {" << endl;
     indent_up();
@@ -3041,10 +3022,9 @@ string t_go_generator::function_signature_if(t_function* tfunction,
     t_type* ret = tfunction->get_returntype();
     t_struct* exceptions = tfunction->get_xceptions();
     string errs = argument_list(exceptions);
-    string retval(tmp("retval"));
 
     if (!ret->is_void()) {
-        signature += retval + " " + type_to_go_type(ret);
+        signature += "r " + type_to_go_type(ret);
 
         if (addError || errs.size() == 0) {
             signature += ", ";
