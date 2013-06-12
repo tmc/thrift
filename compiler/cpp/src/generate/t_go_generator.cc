@@ -982,26 +982,6 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
         indent() << "  }" << endl <<
         indent() << "  return fmt.Sprintf(\"" << escape_string(tstruct_name) << "(%+v)\", *p)" << endl <<
         indent() << "}" << endl << endl;
-    out <<
-        indent() << "func (p *" << tstruct_name << ") AttributeByFieldId(id int) interface{} {" << endl <<
-        indent() << "  switch id {" << endl <<
-        indent() << "  default: return nil" << endl;
-    indent_up();
-
-    for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
-        const string base_field_name = (*m_iter)->get_name();
-        const string escaped_field_name = escape_string(base_field_name);
-        const string go_safe_name = variable_name_to_go_name(escaped_field_name);
-        const string field_name = publicize(go_safe_name);
-        out <<
-            indent() << "case " << (*m_iter)->get_key() << ": return p." << field_name << endl;
-    }
-
-    indent_down();
-    out <<
-        indent() << "  }" << endl <<
-        indent() << "  return nil" << endl <<
-        indent() << "}" << endl << endl;
 
 }
 

@@ -28,20 +28,20 @@ import (
 type StreamTransport struct {
 	Reader       io.Reader
 	Writer       io.Writer
-	IsReadWriter bool
+	isReadWriter bool
 }
 
 type StreamTransportFactory struct {
 	Reader       io.Reader
 	Writer       io.Writer
-	IsReadWriter bool
+	isReadWriter bool
 }
 
 func (p *StreamTransportFactory) GetTransport(trans TTransport) TTransport {
 	if trans != nil {
 		t, ok := trans.(*StreamTransport)
 		if ok {
-			if t.IsReadWriter {
+			if t.isReadWriter {
 				return NewStreamTransportRW(t.Reader.(io.ReadWriter))
 			}
 			if t.Reader != nil && t.Writer != nil {
@@ -56,7 +56,7 @@ func (p *StreamTransportFactory) GetTransport(trans TTransport) TTransport {
 			return &StreamTransport{}
 		}
 	}
-	if p.IsReadWriter {
+	if p.isReadWriter {
 		return NewStreamTransportRW(p.Reader.(io.ReadWriter))
 	}
 	if p.Reader != nil && p.Writer != nil {
@@ -72,7 +72,7 @@ func (p *StreamTransportFactory) GetTransport(trans TTransport) TTransport {
 }
 
 func NewStreamTransportFactory(reader io.Reader, writer io.Writer, isReadWriter bool) *StreamTransportFactory {
-	return &StreamTransportFactory{Reader: reader, Writer: writer, IsReadWriter: isReadWriter}
+	return &StreamTransportFactory{Reader: reader, Writer: writer, isReadWriter: isReadWriter}
 }
 
 func NewStreamTransport(r io.Reader, w io.Writer) *StreamTransport {
@@ -89,7 +89,7 @@ func NewStreamTransportW(w io.Writer) *StreamTransport {
 
 func NewStreamTransportRW(rw io.ReadWriter) *StreamTransport {
 	bufrw := bufio.NewReadWriter(bufio.NewReader(rw), bufio.NewWriter(rw))
-	return &StreamTransport{Reader: bufrw, Writer: bufrw, IsReadWriter: true}
+	return &StreamTransport{Reader: bufrw, Writer: bufrw, isReadWriter: true}
 }
 
 // (The streams must already be open at construction time, so this should
@@ -121,7 +121,7 @@ func (p *StreamTransport) Close() error {
 		}
 		p.Reader = nil
 	}
-	if p.Writer != nil && (!closedReader || !p.IsReadWriter) {
+	if p.Writer != nil && (!closedReader || !p.isReadWriter) {
 		c, ok := p.Writer.(io.Closer)
 		if ok {
 			e := c.Close()
