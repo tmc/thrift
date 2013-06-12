@@ -21,7 +21,7 @@ package main
 
 import (
 	"fmt"
-	"git.apache.org/thrift/lib/go/thrift"
+	"git.apache.org/thrift.git/lib/go/thrift"
 	"tutorial"
 )
 
