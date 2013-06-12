@@ -629,7 +629,7 @@ void t_go_generator::generate_enum(t_enum* tenum)
     std::string tenum_name(publicize(tenum->get_name()));
     generate_go_docstring(f_types_, tenum);
     f_types_ <<
-             "type " << tenum_name << " int64" << endl <<
+             "type " << tenum_name << " int" << endl <<
              "const (" << endl;
     to_string_mapping <<
                       indent() << "func (p " << tenum_name << ") String() string {" << endl <<
@@ -673,15 +673,11 @@ void t_go_generator::generate_enum(t_enum* tenum)
                         indent() << "  }" << endl <<
                         indent() << "  return " << tenum_name << "(math.MinInt32 - 1)" << endl <<
                         indent() << "}" << endl;
-    f_types_ <<
-             indent() << ")" << endl <<
-             to_string_mapping.str() << endl << from_string_mapping.str() << endl <<
-             indent() << "func (p " << tenum_name << ") Value() int {" << endl <<
-             indent() << "  return int(p)" << endl <<
-             indent() << "}" << endl << endl <<
-             indent() << "func (p " << tenum_name << ") IsEnum() bool {" << endl <<
-             indent() << "  return true" << endl <<
-             indent() << "}" << endl << endl;
+
+    f_types_ << ")" << endl << endl
+             << to_string_mapping.str() << endl
+             << from_string_mapping.str() << endl << endl;
+
 }
 
 
@@ -887,11 +883,10 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
     const vector<t_field*>& members = tstruct->get_members();
     const vector<t_field*>& sorted_members = tstruct->get_sorted_members();
     vector<t_field*>::const_iterator m_iter;
-    generate_go_docstring(out, tstruct);
+
     std::string tstruct_name(publicize(tstruct->get_name()));
     out <<
-        indent() << "type " << tstruct_name << " struct {" << endl <<
-        indent() << "  thrift.TStruct" << endl;
+        indent() << "type " << tstruct_name << " struct {" << endl;
     /*
        Here we generate the structure specification for the fastbinary codec.
        These specifications have the following structure:
@@ -923,16 +918,23 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
         for (m_iter = sorted_members.begin(); m_iter != sorted_members.end(); ++m_iter) {
             for (; sorted_keys_pos != (*m_iter)->get_key(); sorted_keys_pos++) {
                 if (sorted_keys_pos != 0) {
-                    indent(out) << "_ interface{}; // nil # " << sorted_keys_pos << endl;
+                    indent(out) << "// unused field # " << sorted_keys_pos << endl;
                 }
             }
 
             t_type* fieldType = (*m_iter)->get_type();
             string goType(type_to_go_type(fieldType));
+
             indent(out) << publicize(variable_name_to_go_name((*m_iter)->get_name())) << " "
-                        << goType << " \"" << escape_string((*m_iter)->get_name())
-                        << "\"; // " << sorted_keys_pos
-                        << endl;
+                        << goType << " `thrift:\""
+                        << escape_string((*m_iter)->get_name())
+                        << "," << sorted_keys_pos;
+
+            if ((*m_iter)->get_req() == t_field::T_REQUIRED) {
+                out << ",required";
+            }
+
+            out << "\"`" << endl;
             sorted_keys_pos ++;
         }
     } else {
@@ -948,19 +950,7 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
     out <<
         indent() << "}" << endl << endl <<
         indent() << "func New" << tstruct_name << "() *" << tstruct_name << " {" << endl <<
-        indent() << "  output := &" << tstruct_name << "{" << endl <<
-        indent() << "    TStruct: thrift.NewTStruct(\"" << escape_string(tstruct->get_name()) << "\", []thrift.TField{" << endl;
-    indent_up();
-    indent_up();
-
-    for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
-        const string thrift_name = escape_string((*m_iter)->get_name());
-        out <<
-            indent() << "thrift.NewTField(\"" << thrift_name << "\", " << type_to_enum((*m_iter)->get_type()) << ", " << (*m_iter)->get_key() << ")," << endl;
-    }
-
-    out <<
-        indent() << "})," << endl;
+        indent() << "  return &" << tstruct_name << "{";
 
     for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
         // Initialize fields
@@ -973,32 +963,18 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
         const bool type_is_enum = type->is_enum();
 
         if (has_default_value) {
-            out << indent() << publicized_name << ": " << render_field_default_value(*m_iter, base_field_name) << "," << endl;
+            out << endl << indent() << publicized_name << ": " << render_field_default_value(*m_iter, base_field_name) << "," << endl;
         } else if (type_is_enum) {
-            out << indent() << publicized_name << ": math.MinInt32 - 1, // unset sentinal value" << endl;
+            out << endl << indent() << publicized_name << ": math.MinInt32 - 1, // unset sentinal value" << endl;
         }
     }
 
-    indent_down();
-    out <<
-        indent() << "}" << endl <<
-        indent() << "return output" << endl;
-    indent_down();
-    out <<
-        indent() << "}" << endl << endl;
+    out << "}" << endl;
+    out << "}" << endl << endl;
     generate_isset_helpers(out, tstruct, tstruct_name, is_result);
     generate_go_struct_reader(out, tstruct, tstruct_name, is_result);
     generate_go_struct_writer(out, tstruct, tstruct_name, is_result);
-    // Printing utilities so that on the command line thrift
-    // structs look pretty like dictionaries
-    out <<
-        indent() << "func (p *" << tstruct_name << ") TStructName() string {" << endl <<
-        indent() << "  return \"" << escape_string(tstruct_name) << "\"" << endl <<
-        indent() << "}" << endl << endl;
-    out <<
-        indent() << "func (p *" << tstruct_name << ") ThriftName() string {" << endl <<
-        indent() << "  return \"" << escape_string(tstruct->get_name()) << "\"" << endl <<
-        indent() << "}" << endl << endl;
+
     out <<
         indent() << "func (p *" << tstruct_name << ") String() string {" << endl <<
         indent() << "  if p == nil {" << endl <<
@@ -1026,24 +1002,7 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
         indent() << "  }" << endl <<
         indent() << "  return nil" << endl <<
         indent() << "}" << endl << endl;
-    out <<
-        indent() << "func (p *" << tstruct_name << ") TStructFields() thrift.TFieldContainer {" << endl <<
-        indent() << "  return thrift.NewTFieldContainer([]thrift.TField{" << endl;
-    indent_up();
-    indent_up();
 
-    for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
-        string thrift_name((*m_iter)->get_name());
-        out <<
-            indent() << "thrift.NewTField(\"" << escape_string(thrift_name) << "\", " << type_to_enum((*m_iter)->get_type()) << ", " << (*m_iter)->get_key() << ")," << endl;
-    }
-
-    out <<
-        indent() << "})" << endl;
-    indent_down();
-    indent_down();
-    out <<
-        indent() << "}" << endl << endl;
 }
 
 /**
@@ -1157,24 +1116,20 @@ void t_go_generator::generate_go_struct_reader(ofstream& out,
     vector<t_field*>::const_iterator f_iter;
     string escaped_tstruct_name(escape_string(tstruct->get_name()));
     out <<
-        indent() << "func (p *" << tstruct_name << ") Read(iprot thrift.TProtocol) (err error) {" << endl;
+        indent() << "func (p *" << tstruct_name << ") Read(iprot thrift.TProtocol) error {" << endl;
     indent_up();
     out <<
-        indent() << "_, err = iprot.ReadStructBegin()" << endl <<
-        indent() << "if err != nil { return thrift.NewTProtocolExceptionReadStruct(p.ThriftName(), err); }" << endl;
+        indent() << "if _, err := iprot.ReadStructBegin(); err != nil {" << endl <<
+        indent() << "  return fmt.Errorf(\"%T read error\", p)" << endl <<
+        indent() << "}" << endl;
     // Loop over reading in fields
     indent(out) << "for {" << endl;
     indent_up();
     // Read beginning field marker
     out <<
-        indent() << "fieldName, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()" << endl <<
-        indent() << "if fieldId < 0 {" << endl <<
-        indent() << "  fieldId = int16(p.FieldIdFromFieldName(fieldName))" << endl <<
-        indent() << "} else if fieldName == \"\" {" << endl <<
-        indent() << "  fieldName = p.FieldNameFromFieldId(int(fieldId))" << endl <<
-        indent() << "}" << endl <<
+        indent() << "_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()" << endl <<
         indent() << "if err != nil {" << endl <<
-        indent() << "  return thrift.NewTProtocolExceptionReadField(int(fieldId), fieldName, p.ThriftName(), err)" << endl <<
+        indent() << "  return fmt.Errorf(\"%T field %d read error: %s\", p, fieldId, err)" << endl <<
         indent() << "}" << endl;
     // Check for field STOP marker and break
     out <<
@@ -1190,12 +1145,11 @@ void t_go_generator::generate_go_struct_reader(ofstream& out,
 
         if (first) {
             first = false;
-            indent(out);
-        } else {
-            indent(out) << "} else ";
+            indent(out) << "switch fieldId {" << endl;
         }
 
-        out << "if fieldId == " << field_id << " || fieldName == \"" << escape_string((*f_iter)->get_name()) << "\" {" << endl;
+
+        out << "case " << field_id << ":" << endl;
         indent_up();
         thriftFieldTypeId = type_to_enum((*f_iter)->get_type());
 
@@ -1204,42 +1158,34 @@ void t_go_generator::generate_go_struct_reader(ofstream& out,
         }
 
         out <<
-            indent() << "if fieldTypeId == " << thriftFieldTypeId << " {" << endl <<
-            indent() << "  err = p.ReadField" << field_id << "(iprot)" << endl <<
-            indent() << "  if err != nil { return thrift.NewTProtocolExceptionReadField(int(fieldId), fieldName, p.ThriftName(), err); }" << endl <<
-            indent() << "} else if fieldTypeId == thrift.VOID {" << endl <<
-            indent() << "  err = iprot.Skip(fieldTypeId)" << endl <<
-            indent() << "  if err != nil { return thrift.NewTProtocolExceptionReadField(int(fieldId), fieldName, p.ThriftName(), err); }" << endl <<
-            indent() << "} else {" << endl <<
-            indent() << "  err = p.ReadField" << field_id << "(iprot)" << endl <<
-            indent() << "  if err != nil { return thrift.NewTProtocolExceptionReadField(int(fieldId), fieldName, p.ThriftName(), err); }" << endl <<
+            indent() << "if err := p.readField" << field_id << "(iprot); err != nil {" << endl <<
+            indent() << "  return err" << endl <<
             indent() << "}" << endl;
         indent_down();
     }
 
     // In the default case we skip the field
-    if (first) {
-        out <<
-            indent() << "err = iprot.Skip(fieldTypeId)" << endl <<
-            indent() << "if err != nil { return thrift.NewTProtocolExceptionReadField(int(fieldId), fieldName, p.ThriftName(), err); }" << endl;
-    } else {
-        out <<
-            indent() << "} else {" << endl <<
-            indent() << "  err = iprot.Skip(fieldTypeId)" << endl <<
-            indent() << "  if err != nil { return thrift.NewTProtocolExceptionReadField(int(fieldId), fieldName, p.ThriftName(), err); }" << endl <<
-            indent() << "}" << endl;
+    if (!first) {
+      out <<
+          indent() << "default:" << endl <<
+          indent() << "  if err := iprot.Skip(fieldTypeId); err != nil {" << endl <<
+          indent() << "    return err" << endl <<
+          indent() << "  }" << endl <<
+          indent() << "}" << endl;
     }
 
     // Read field end marker
     out <<
-        indent() << "err = iprot.ReadFieldEnd()" << endl <<
-        indent() << "if err != nil { return thrift.NewTProtocolExceptionReadField(int(fieldId), fieldName, p.ThriftName(), err); }" << endl;
+        indent() << "if err := iprot.ReadFieldEnd(); err != nil {" << endl <<
+        indent() << "  return err" << endl <<
+        indent() << "}" << endl;
     indent_down();
     out <<
         indent() << "}" << endl <<
-        indent() << "err = iprot.ReadStructEnd()" << endl <<
-        indent() << "if err != nil { return thrift.NewTProtocolExceptionReadStruct(p.ThriftName(), err); }" << endl <<
-        indent() << "return err" << endl;
+        indent() << "if err := iprot.ReadStructEnd(); err != nil {" << endl <<
+        indent() << "  return fmt.Errorf(\"%T read struct end error: %s\", p, err)" << endl <<
+        indent() << "}" << endl <<
+        indent() << "return nil" << endl;
     indent_down();
     out <<
         indent() << "}" << endl << endl;
@@ -1249,15 +1195,12 @@ void t_go_generator::generate_go_struct_reader(ofstream& out,
         string field_name(publicize((*f_iter)->get_name()));
         int32_t field_id = (*f_iter)->get_key();
         out <<
-            indent() << "func (p *" << tstruct_name << ") ReadField" << field_id << "(iprot thrift.TProtocol) (err error) {" << endl;
+            indent() << "func (p *" << tstruct_name << ") readField" << field_id << "(iprot thrift.TProtocol) error {" << endl;
         indent_up();
         generate_deserialize_field(out, *f_iter, false, "p.");
         indent_down();
         out <<
-            indent() << "  return err" << endl <<
-            indent() << "}" << endl << endl <<
-            indent() << "func (p *" << tstruct_name << ") ReadField" << field_name << "(iprot thrift.TProtocol) error {" << endl <<
-            indent() << "  return p.ReadField" << field_id << "(iprot)" << endl <<
+            indent() << "  return nil" << endl <<
             indent() << "}" << endl << endl;
     }
 }
@@ -1271,12 +1214,12 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
     const vector<t_field*>& fields = tstruct->get_sorted_members();
     vector<t_field*>::const_iterator f_iter;
     indent(out) <<
-                "func (p *" << tstruct_name << ") Write(oprot thrift.TProtocol) (err error) {" << endl;
+                "func (p *" << tstruct_name << ") Write(oprot thrift.TProtocol) error {" << endl;
     indent_up();
     out <<
-        indent() << "err = oprot.WriteStructBegin(\"" << name << "\")" << endl <<
-        indent() << "if err != nil { return thrift.NewTProtocolExceptionWriteStruct(" <<
-        "p.ThriftName(), err); }" << endl;
+        indent() << "if err := oprot.WriteStructBegin(\"" << name << "\"); err != nil {" << endl <<
+        indent() << "  return fmt.Errorf(\"%T write struct begin error: %s\", p, err) }" << endl;
+
     string field_name;
     string escape_field_name;
     t_const_value* field_default_value;
@@ -1296,15 +1239,11 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
             if (can_be_nil((*fr_iter)->get_type()) && fieldId != 0) {
                 out <<
                     indent() << "case p." << publicize(variable_name_to_go_name(field_name)) << " != nil:" << endl <<
-                    indent() << "  if err = p.WriteField" << fieldId << "(oprot); err != nil {" << endl <<
-                    indent() << "    return err" << endl <<
-                    indent() << "  }" << endl;
+                    indent() << "  if err := p.writeField" << fieldId << "(oprot); err != nil { return err }" << endl;
             } else {
                 out <<
                     indent() << "default:" << endl <<
-                    indent() << "  if err = p.WriteField" << fieldId << "(oprot); err != nil {" << endl <<
-                    indent() << "    return err" << endl <<
-                    indent() << "  }" << endl;
+                    indent() << "  if err := p.writeField" << fieldId << "(oprot); err != nil { return err }" << endl;
             }
         }
 
@@ -1316,19 +1255,17 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
             escape_field_name = escape_string(field_name);
             fieldId = (*f_iter)->get_key();
             out <<
-                indent() << "err = p.WriteField" << fieldId << "(oprot)" << endl <<
-                indent() << "if err != nil { return err }" << endl;
+                indent() << "if err := p.writeField" << fieldId << "(oprot); err != nil { return err }" << endl;
         }
     }
 
     // Write the struct map
     out <<
-        indent() << "err = oprot.WriteFieldStop()" << endl <<
-        indent() << "if err != nil { return thrift.NewTProtocolExceptionWriteField(-1, \"STOP\", p.ThriftName(), err); }" << endl <<
-        indent() << "err = oprot.WriteStructEnd()" << endl <<
-        indent() << "if err != nil { return thrift.NewTProtocolExceptionWriteStruct(" <<
-        "p.ThriftName(), err); }" << endl <<
-        indent() << "return err" << endl;
+        indent() << "if err := oprot.WriteFieldStop(); err != nil {" << endl <<
+        indent() << "  return fmt.Errorf(\"%T write field stop error: %s\", err) }" << endl <<
+        indent() << "if err := oprot.WriteStructEnd(); err != nil {" << endl <<
+        indent() << "  return fmt.Errorf(\"%T write struct stop error: %s\", err) }" << endl <<
+        indent() << "return nil" << endl;
     indent_down();
     out <<
         indent() << "}" << endl << endl;
@@ -1341,7 +1278,7 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
         field_required = (*f_iter)->get_req();
         field_can_be_nil = can_be_nil((*f_iter)->get_type());
         out <<
-            indent() << "func (p *" << tstruct_name << ") WriteField" << fieldId << "(oprot thrift.TProtocol) (err error) {" << endl;
+            indent() << "func (p *" << tstruct_name << ") writeField" << fieldId << "(oprot thrift.TProtocol) (err error) {" << endl;
         indent_up();
 
         // Write field header
@@ -1358,23 +1295,20 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
         }
 
         out <<
-            indent() << "err = oprot.WriteFieldBegin(\"" <<
+            indent() << "if err := oprot.WriteFieldBegin(\"" <<
             escape_field_name << "\", " <<
             type_to_enum((*f_iter)->get_type()) << ", " <<
-            fieldId << ")" << endl <<
-            indent() << "if err != nil { return thrift.NewTProtocolExceptionWriteField(" <<
-            fieldId << ", \"" <<
-            escape_field_name << "\", " <<
-            "p.ThriftName(), err); }" << endl;
+            fieldId << "); err != nil {" << endl <<
+            indent() << "  return fmt.Errorf(\"%T write field begin error " << fieldId << ":" << escape_field_name << ": %s\", p, err); }" << endl;
+
         // Write field contents
         generate_serialize_field(out, *f_iter, "p.");
+
+
         // Write field closer
         out <<
-            indent() << "err = oprot.WriteFieldEnd()" << endl <<
-            indent() << "if err != nil { return thrift.NewTProtocolExceptionWriteField(" <<
-            fieldId << ", \"" <<
-            escape_field_name << "\", " <<
-            "p.ThriftName(), err); }" << endl;
+            indent() << "if err := oprot.WriteFieldEnd(); err != nil {" << endl <<
+            indent() << "  return fmt.Errorf(\"%T write field end error "<< fieldId << ":" << escape_field_name << ": %s\", p, err); }" << endl;
 
         if (field_required == t_field::T_OPTIONAL || (*f_iter)->get_type()->is_enum()) {
             indent_down();
@@ -1391,9 +1325,6 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
         indent_down();
         out <<
             indent() << "  return err" << endl <<
-            indent() << "}" << endl << endl <<
-            indent() << "func (p *" << tstruct_name << ") WriteField" << publicize(field_name) << "(oprot thrift.TProtocol) error {" << endl <<
-            indent() << "  return p.WriteField" << fieldId << "(oprot)" << endl <<
             indent() << "}" << endl << endl;
     }
 }
@@ -1954,7 +1885,7 @@ void t_go_generator::generate_service_remote(t_service* tservice)
              indent() << "  os.Exit(1)" << endl <<
              indent() << "}" << endl <<
              indent() << "client := " << package_name_ << ".New" << publicize(service_name_) << "ClientFactory(trans, protocolFactory)" << endl <<
-             indent() << "if err = trans.Open(); err != nil {" << endl <<
+             indent() << "if err := trans.Open(); err != nil {" << endl <<
              indent() << "  fmt.Fprintln(os.Stderr, \"Error opening socket to \", host, \":\", port, \" \", err)" << endl <<
              indent() << "  os.Exit(1)" << endl <<
              indent() << "}" << endl <<
@@ -2495,9 +2426,6 @@ void t_go_generator::generate_deserialize_field(ofstream &out,
         throw "CANNOT GENERATE DESERIALIZE CODE FOR void TYPE: " + name;
     }
 
-    string v = tmp("v");
-    string err2 = tmp("err");
-
     if (type->is_struct() || type->is_xception()) {
         generate_deserialize_struct(out,
                                     (t_struct*)type,
@@ -2507,8 +2435,9 @@ void t_go_generator::generate_deserialize_field(ofstream &out,
     } else if (type->is_container()) {
         generate_deserialize_container(out, type, declare, name, err);
     } else if (type->is_base_type() || type->is_enum()) {
+
         indent(out) <<
-                    v << ", " << err2 << " := iprot.";
+                    "if v, err := iprot.";
 
         if (type->is_base_type()) {
             t_base_type::t_base tbase = ((t_base_type*)type)->get_base();
@@ -2559,33 +2488,19 @@ void t_go_generator::generate_deserialize_field(ofstream &out,
             out << "ReadI32()";
         }
 
-        string structName;
-
-        if (!prefix.size() || prefix.find(".") == string::npos) {
-            structName = "\"\"";
-        } else {
-            structName = prefix + "ThriftName()";
-        }
-
-        out << endl <<
-            indent() << "if " << err2 << " != nil { return thrift.NewTProtocolExceptionReadField(" <<
+        out << "; err != nil {" << endl <<
+            indent() << "return fmt.Errorf(\"error reading field " <<
             tfield->get_key()  <<
-            ", \"" << escape_string(tfield->get_name()) <<
-            "\", " << structName << ", " << err2 << "); }" << endl;
+            ":" << escape_string(tfield->get_name()) <<
+            ", %s\", err)" << endl;
 
-        if (!prefix.size() || prefix.find(".") == string::npos) {
-            if (type->is_enum() || orig_type->is_typedef()) {
-                indent(out) << name << " := " << publicize(orig_type->get_name()) << "(" << v << ")" << endl;
-            } else {
-                indent(out) << name << " := " << v << endl;
-            }
+        out << "} else {" << endl;
+        if (type->is_enum() || orig_type->is_typedef()) {
+            indent(out) << name << " = " << publicize(orig_type->get_name()) << "(v)" << endl;
         } else {
-            if (type->is_enum() || orig_type->is_typedef()) {
-                indent(out) << name << " = " << publicize(orig_type->get_name()) << "(" << v << ")" << endl;
-            } else {
-                indent(out) << name << " = " << v << endl;
-            }
+            indent(out) << name << " = v" << endl;
         }
+        out << "}" << endl;
     } else {
         throw "INVALID TYPE IN generate_deserialize_field '" + type->get_name() + "' for field '" + tfield->get_name() + "'";
     }
@@ -2796,7 +2711,7 @@ void t_go_generator::generate_serialize_field(ofstream &out,
                                      err);
     } else if (type->is_base_type() || type->is_enum()) {
         indent(out) <<
-                    err << " = oprot.";
+                    "if err := oprot.";
 
         if (type->is_base_type()) {
             t_base_type::t_base tbase = ((t_base_type*)type)->get_base();
@@ -2847,19 +2762,9 @@ void t_go_generator::generate_serialize_field(ofstream &out,
             out << "WriteI32(int32(" << name << "))";
         }
 
-        string structName;
-
-        if (!prefix.size() || prefix.find(".") == string::npos) {
-            structName = "\"\"";
-        } else {
-            structName = prefix + "ThriftName()";
-        }
-
-        out << endl <<
-            indent() << "if " << err << " != nil { return thrift.NewTProtocolExceptionWriteField("
-            << tfield->get_key()
-            << ", \"" << escape_string(tfield->get_name())
-            << "\", " << structName << ", " << err << "); }\n";
+        out << "; err != nil {" << endl
+            << indent() << "return fmt.Errorf(\"%T." << escape_string(tfield->get_name())
+            << " (" << tfield->get_key() << ") field write error: %s\", p, err) }" << endl;
     } else {
         throw "INVALID TYPE IN generate_serialize_field '" + type->get_name() + "' for field '" + name + "'";
     }
