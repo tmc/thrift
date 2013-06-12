@@ -35,7 +35,7 @@ const (
 	COMPACT_TYPE_SHIFT_AMOUNT = 5
 )
 
-type TCompactType byte
+type tCompactType byte
 
 const (
 	COMPACT_BOOLEAN_TRUE  = 0x01
@@ -53,13 +53,11 @@ const (
 )
 
 var (
-	tTypeToCompactType map[TType]TCompactType
-	tSTOP              TField
+	ttypeToCompactType map[TType]tCompactType
 )
 
 func init() {
-	tSTOP = NewTField("", STOP, 0)
-	tTypeToCompactType = map[TType]TCompactType{
+	ttypeToCompactType = map[TType]tCompactType{
 		STOP:   STOP,
 		BOOL:   COMPACT_BOOLEAN_TRUE,
 		BYTE:   COMPACT_BYTE,
@@ -95,7 +93,7 @@ type TCompactProtocol struct {
 
 	// If we encounter a boolean field begin, save the TField here so it can
 	// have the value incorporated.
-	booleanField TField
+	booleanField *field
 
 	// If we read a field header, and it's a boolean field, save the boolean
 	// value here so that readBool can use it.
@@ -155,7 +153,7 @@ func (p *TCompactProtocol) WriteStructEnd() error {
 func (p *TCompactProtocol) WriteFieldBegin(name string, typeId TType, id int16) error {
 	if typeId == BOOL {
 		// we want to possibly include the value, so we'll wait.
-		p.booleanField = NewTField(name, typeId, int(id))
+		p.booleanField = newField(name, typeId, int(id))
 		return nil
 	}
 	_, err := p.writeFieldBeginInternal(name, typeId, id, 0xFF)
@@ -366,7 +364,7 @@ func (p *TCompactProtocol) ReadFieldBegin() (name string, typeId TType, id int16
 
 	// if it's a stop, then we can return immediately, as the struct is over.
 	if (t & 0x0f) == STOP {
-		return tSTOP.Name(), tSTOP.TypeId(), int16(tSTOP.Id()), nil
+		return "", STOP, 0,nil
 	}
 
 	// mask off the 4 MSB of the type header. it could contain a field id delta.
@@ -381,7 +379,7 @@ func (p *TCompactProtocol) ReadFieldBegin() (name string, typeId TType, id int16
 		// has a delta. add the delta to the last read field id.
 		id = int16(p.lastFieldId) + modifier
 	}
-	typeId, e := p.getTType(TCompactType(t & 0x0f))
+	typeId, e := p.getTType(tCompactType(t & 0x0f))
 	if e != nil {
 		err = newTProtocolExceptionFromError(e)
 		return
@@ -418,8 +416,8 @@ func (p *TCompactProtocol) ReadMapBegin() (keyType TType, valueType TType, size 
 			return
 		}
 	}
-	keyType, _ = p.getTType(TCompactType(keyAndValueType >> 4))
-	valueType, _ = p.getTType(TCompactType(keyAndValueType & 0xf))
+	keyType, _ = p.getTType(tCompactType(keyAndValueType >> 4))
+	valueType, _ = p.getTType(tCompactType(keyAndValueType & 0xf))
 	return
 }
 
@@ -443,7 +441,7 @@ func (p *TCompactProtocol) ReadListBegin() (elemType TType, size int, err error)
 		}
 		size = int(size2)
 	}
-	elemType, e := p.getTType(TCompactType(size_and_type))
+	elemType, e := p.getTType(tCompactType(size_and_type))
 	if e != nil {
 		err = newTProtocolExceptionFromError(e)
 		return
@@ -715,9 +713,9 @@ func (p *TCompactProtocol) isBoolType(b byte) bool {
 	return (b&0x0f) == COMPACT_BOOLEAN_TRUE || (b&0x0f) == COMPACT_BOOLEAN_FALSE
 }
 
-// Given a TCompactType constant, convert it to its corresponding
+// Given a tCompactType constant, convert it to its corresponding
 // TType value.
-func (p *TCompactProtocol) getTType(t TCompactType) (TType, error) {
+func (p *TCompactProtocol) getTType(t tCompactType) (TType, error) {
 	switch byte(t) & 0x0f {
 	case STOP:
 		return STOP, nil
@@ -749,6 +747,6 @@ func (p *TCompactProtocol) getTType(t TCompactType) (TType, error) {
 }
 
 // Given a TType value, find the appropriate TCompactProtocol.Types constant.
-func (p *TCompactProtocol) getCompactType(t TType) TCompactType {
-	return tTypeToCompactType[t]
+func (p *TCompactProtocol) getCompactType(t TType) tCompactType {
+	return ttypeToCompactType[t]
 }

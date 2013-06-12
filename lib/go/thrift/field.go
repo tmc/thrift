@@ -19,145 +19,61 @@
 
 package thrift
 
-import (
-	"sort"
-)
-
 // Helper class that encapsulates field metadata.
-type TField interface {
-	Name() string
-	TypeId() TType
-	Id() int
-	String() string
-}
-
-type tField struct {
+type field struct {
 	name   string
 	typeId TType
 	id     int
 }
 
-func NewTFieldDefault() TField {
-	return ANONYMOUS_FIELD
+func newField(n string, t TType, i int) *field {
+	return &field{name: n, typeId: t, id: i}
 }
 
-func NewTField(n string, t TType, i int) TField {
-	return &tField{name: n, typeId: t, id: i}
-}
-
-func (p *tField) Name() string {
+func (p *field) Name() string {
 	if p == nil {
 		return ""
 	}
 	return p.name
 }
 
-func (p *tField) TypeId() TType {
+func (p *field) TypeId() TType {
 	if p == nil {
 		return TType(VOID)
 	}
 	return p.typeId
 }
 
-func (p *tField) Id() int {
+func (p *field) Id() int {
 	if p == nil {
 		return -1
 	}
 	return p.id
 }
 
-func (p *tField) String() string {
+func (p *field) String() string {
 	if p == nil {
 		return "<nil>"
 	}
 	return "<TField name:'" + p.name + "' type:" + string(p.typeId) + " field-id:" + string(p.id) + ">"
 }
 
-var ANONYMOUS_FIELD TField
+var ANONYMOUS_FIELD *field
 
-type tFieldArray []TField
+type fieldSlice []field
 
-func (p tFieldArray) Len() int {
+func (p fieldSlice) Len() int {
 	return len(p)
 }
 
-func (p tFieldArray) Less(i, j int) bool {
+func (p fieldSlice) Less(i, j int) bool {
 	return p[i].Id() < p[j].Id()
 }
 
-func (p tFieldArray) Swap(i, j int) {
+func (p fieldSlice) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
 }
 
-type TFieldContainer interface {
-	FieldNameFromFieldId(id int) string
-	FieldIdFromFieldName(name string) int
-	FieldFromFieldId(id int) TField
-	FieldFromFieldName(name string) TField
-	At(i int) TField
-}
-
-type tFieldContainer struct {
-	fields         []TField
-	nameToFieldMap map[string]TField
-	idToFieldMap   map[int]TField
-}
-
-func NewTFieldContainer(fields []TField) TFieldContainer {
-	sortedFields := make([]TField, len(fields))
-	nameToFieldMap := make(map[string]TField)
-	idToFieldMap := make(map[int]TField)
-	for i, field := range fields {
-		sortedFields[i] = field
-		idToFieldMap[field.Id()] = field
-		if field.Name() != "" {
-			nameToFieldMap[field.Name()] = field
-		}
-	}
-	sort.Sort(tFieldArray(sortedFields))
-	return &tFieldContainer{
-		fields:         fields,
-		nameToFieldMap: nameToFieldMap,
-		idToFieldMap:   idToFieldMap,
-	}
-}
-
-func (p *tFieldContainer) FieldNameFromFieldId(id int) string {
-	if field, ok := p.idToFieldMap[id]; ok {
-		return field.Name()
-	}
-	return ""
-}
-
-func (p *tFieldContainer) FieldIdFromFieldName(name string) int {
-	if field, ok := p.nameToFieldMap[name]; ok {
-		return field.Id()
-	}
-	return -1
-}
-
-func (p *tFieldContainer) FieldFromFieldId(id int) TField {
-	if field, ok := p.idToFieldMap[id]; ok {
-		return field
-	}
-	return ANONYMOUS_FIELD
-}
-
-func (p *tFieldContainer) FieldFromFieldName(name string) TField {
-	if field, ok := p.nameToFieldMap[name]; ok {
-		return field
-	}
-	return ANONYMOUS_FIELD
-}
-
-func (p *tFieldContainer) Len() int {
-	return len(p.fields)
-}
-
-func (p *tFieldContainer) At(i int) TField {
-	return p.FieldFromFieldId(i)
-}
-
 func init() {
-	ANONYMOUS_FIELD = NewTField("", STOP, 0)
+	ANONYMOUS_FIELD = newField("", STOP, 0)
 }
