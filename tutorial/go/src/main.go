@@ -30,31 +30,18 @@ func Usage() {
 	fmt.Fprint(os.Stderr, "Usage of ", os.Args[0], " <--server | --client>:\n")
 	flag.PrintDefaults()
 	fmt.Fprint(os.Stderr, "\n")
-	os.Exit(0)
 }
 
 func main() {
 	flag.Usage = Usage
-	var client bool
-	var server bool
-	var protocol string
-	var framed bool
-	var useHttp bool
-	var help bool
+	server := flag.Bool("server", false, "Run server")
+	protocol := flag.String("P", "binary", "Specify the protocol (binary, compact, simplejson)")
+	framed := flag.Bool("framed", false, "Use framed transport")
 
-	flag.BoolVar(&client, "client", false, "Run client")
-	flag.BoolVar(&server, "server", false, "Run server")
-	flag.StringVar(&protocol, "P", "binary", "Specify the protocol (binary, compact, simplejson)")
-	flag.BoolVar(&framed, "framed", false, "Use framed transport")
-	flag.BoolVar(&useHttp, "http", false, "Use http")
-	flag.BoolVar(&help, "help", false, "See usage string")
 	flag.Parse()
-	if help || (client && server) || !(client || server) {
-		fmt.Print("flag.NArg() == ", flag.NArg(), "\n")
-		flag.Usage()
-	}
+
 	var protocolFactory thrift.TProtocolFactory
-	switch protocol {
+	switch *protocol {
 	case "compact":
 		protocolFactory = thrift.NewTCompactProtocolFactory()
 	case "simplejson":
@@ -69,16 +56,13 @@ func main() {
 		os.Exit(1)
 	}
 	transportFactory := thrift.NewTTransportFactory()
-	if framed {
+	if *framed {
 		transportFactory = thrift.NewTFramedTransportFactory(transportFactory)
 	}
 
-	if client {
-		runClient(transportFactory, protocolFactory)
-	} else if server {
+	if *server {
 		runServer(transportFactory, protocolFactory)
 	} else {
-		flag.Usage()
+		runClient(transportFactory, protocolFactory)
 	}
-	os.Exit(0)
 }
