@@ -449,7 +449,7 @@ void t_go_generator::init_generator()
 
     while (true) {
         // TODO: Do better error checking here.
-        MKDIR(underscore(package_dir_).c_str());
+        MKDIR(package_dir_.c_str());
 
         if (module.empty()) {
             break;
