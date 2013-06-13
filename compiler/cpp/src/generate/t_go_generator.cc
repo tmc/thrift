@@ -1129,9 +1129,15 @@ void t_go_generator::generate_go_struct_reader(ofstream& out,
             indent(out) << "switch fieldId {" << endl;
         }
 
+        // if negative id, ensure we generate a valid method name
+        string field_method_prefix("readField");
+        if (field_id < 0) {
+            field_method_prefix += "_";
+            field_id *= -1;
+        }
 
-        out << "case " << field_id << ":" << endl;
         indent_up();
+        out << "case " << field_id << ":" << endl;
         thriftFieldTypeId = type_to_enum((*f_iter)->get_type());
 
         if (thriftFieldTypeId == "thrift.BINARY") {
@@ -1139,7 +1145,7 @@ void t_go_generator::generate_go_struct_reader(ofstream& out,
         }
 
         out <<
-            indent() << "if err := p.readField" << field_id << "(iprot); err != nil {" << endl <<
+            indent() << "if err := p." << field_method_prefix << field_id << "(iprot); err != nil {" << endl <<
             indent() << "  return err" << endl <<
             indent() << "}" << endl;
         indent_down();
@@ -1174,9 +1180,14 @@ void t_go_generator::generate_go_struct_reader(ofstream& out,
     for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
         string field_type_name(publicize((*f_iter)->get_type()->get_name()));
         string field_name(publicize((*f_iter)->get_name()));
+        string field_method_prefix("readField");
         int32_t field_id = (*f_iter)->get_key();
+        if (field_id < 0) {
+            field_method_prefix += "_";
+            field_id *= -1;
+        }
         out <<
-            indent() << "func (p *" << tstruct_name << ") readField" << field_id << "(iprot thrift.TProtocol) error {" << endl;
+            indent() << "func (p *" << tstruct_name << ")  " << field_method_prefix << field_id << "(iprot thrift.TProtocol) error {" << endl;
         indent_up();
         generate_deserialize_field(out, *f_iter, false, "p.");
         indent_down();
@@ -1206,7 +1217,7 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
     t_const_value* field_default_value;
     t_field::e_req field_required;
     bool field_can_be_nil = false;
-    int32_t fieldId = -1;
+    int32_t field_id = -1;
 
     if (is_result && fields.size()) {
         out <<
@@ -1214,17 +1225,21 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
         vector<t_field*>::const_reverse_iterator fr_iter;
 
         for (fr_iter = fields.rbegin(); fr_iter != fields.rend(); ++fr_iter) {
+            string field_method_prefix("writeField");
             field_name = (*fr_iter)->get_name();
-            fieldId = (*fr_iter)->get_key();
-
-            if (can_be_nil((*fr_iter)->get_type()) && fieldId != 0) {
+            field_id = (*fr_iter)->get_key();
+            if (field_id < 0) {
+                field_method_prefix += "_";
+                field_id *= -1;
+            }
+            if (can_be_nil((*fr_iter)->get_type()) && field_id != 0) {
                 out <<
                     indent() << "case p." << publicize(variable_name_to_go_name(field_name)) << " != nil:" << endl <<
-                    indent() << "  if err := p.writeField" << fieldId << "(oprot); err != nil { return err }" << endl;
+                    indent() << "  if err := p." << field_method_prefix << field_id << "(oprot); err != nil { return err }" << endl;
             } else {
                 out <<
                     indent() << "default:" << endl <<
-                    indent() << "  if err := p.writeField" << fieldId << "(oprot); err != nil { return err }" << endl;
+                    indent() << "  if err := p." << field_method_prefix << field_id << "(oprot); err != nil { return err }" << endl;
             }
         }
 
@@ -1232,11 +1247,17 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
             indent() << "}" << endl;
     } else {
         for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+            string field_method_prefix("writeField");
             field_name = (*f_iter)->get_name();
             escape_field_name = escape_string(field_name);
-            fieldId = (*f_iter)->get_key();
+            field_id = (*f_iter)->get_key();
+            if (field_id < 0) {
+                field_method_prefix += "_";
+                field_id *= -1;
+            }
             out <<
-                indent() << "if err := p.writeField" << fieldId << "(oprot); err != nil { return err }" << endl;
+                indent() << "if err := p." << field_method_prefix << field_id << "(oprot); err != nil { return err }" << endl;
+
         }
     }
 
@@ -1252,14 +1273,19 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
         indent() << "}" << endl << endl;
 
     for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
-        fieldId = (*f_iter)->get_key();
+        string field_method_prefix("writeField");
+        field_id = (*f_iter)->get_key();
         field_name = (*f_iter)->get_name();
         escape_field_name = escape_string(field_name);
         field_default_value = (*f_iter)->get_value();
         field_required = (*f_iter)->get_req();
         field_can_be_nil = can_be_nil((*f_iter)->get_type());
+        if (field_id < 0) {
+            field_method_prefix += "_";
+            field_id *= -1;
+        }
         out <<
-            indent() << "func (p *" << tstruct_name << ") writeField" << fieldId << "(oprot thrift.TProtocol) (err error) {" << endl;
+            indent() << "func (p *" << tstruct_name << ") " << field_method_prefix << field_id << "(oprot thrift.TProtocol) (err error) {" << endl;
         indent_up();
 
         // Write field header
@@ -1279,8 +1305,8 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
             indent() << "if err := oprot.WriteFieldBegin(\"" <<
             escape_field_name << "\", " <<
             type_to_enum((*f_iter)->get_type()) << ", " <<
-            fieldId << "); err != nil {" << endl <<
-            indent() << "  return fmt.Errorf(\"%T write field begin error " << fieldId << ":" << escape_field_name << ": %s\", p, err); }" << endl;
+            field_id << "); err != nil {" << endl <<
+            indent() << "  return fmt.Errorf(\"%T write field begin error " << field_id << ":" << escape_field_name << ": %s\", p, err); }" << endl;
 
         // Write field contents
         generate_serialize_field(out, *f_iter, "p.");
@@ -1289,7 +1315,7 @@ void t_go_generator::generate_go_struct_writer(ofstream& out,
         // Write field closer
         out <<
             indent() << "if err := oprot.WriteFieldEnd(); err != nil {" << endl <<
-            indent() << "  return fmt.Errorf(\"%T write field end error "<< fieldId << ":" << escape_field_name << ": %s\", p, err); }" << endl;
+            indent() << "  return fmt.Errorf(\"%T write field end error "<< field_id << ":" << escape_field_name << ": %s\", p, err); }" << endl;
 
         if (field_required == t_field::T_OPTIONAL || (*f_iter)->get_type()->is_enum()) {
             indent_down();
