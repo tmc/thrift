@@ -229,6 +229,7 @@ public:
     std::string argument_list(t_struct* tstruct);
     std::string type_to_enum(t_type* ttype);
     std::string type_to_go_type(t_type* ttype);
+    std::string type_to_go_key_type(t_type* ttype);
     std::string type_to_spec_args(t_type* ttype);
 
     static std::string get_real_go_module(const t_program* program) {
@@ -822,7 +823,7 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
         t_type* etype = ((t_set*)type)->get_elem_type();
         const vector<t_const_value*>& val = value->get_list();
         out <<
-            "map[" << type_to_go_type(etype) << "]bool{" << endl;
+            "map[" << type_to_go_key_type(etype) << "]bool{" << endl;
         indent_up();
         vector<t_const_value*>::const_iterator v_iter;
 
@@ -3140,6 +3141,25 @@ string t_go_generator::type_to_enum(t_type* type)
     throw "INVALID TYPE IN type_to_enum: " + type->get_name();
 }
 
+
+/**
+ * Converts the parse type to a go map type, will throw an exception if it will
+ * not produce a valid go map type.
+ */
+string t_go_generator::type_to_go_key_type(t_type* type)
+{
+    string go_type = type_to_go_type(type);
+    while (type->is_typedef()) {
+        type = ((t_typedef*)type)->get_type();
+    }
+
+    if (type->is_map() || type->is_list() || type->is_set()) {
+        throw "Cannot produce a valid type for a Go map key: "  + type_to_go_type(type) + " - aborting.";
+
+    }
+    return type_to_go_type(type);
+}
+
 /**
  * Converts the parse type to a go tyoe
  */
@@ -3184,12 +3204,12 @@ string t_go_generator::type_to_go_type(t_type* type)
         return string("*") + publicize(type->get_name());
     } else if (type->is_map()) {
         t_map* t = (t_map*)type;
-        string keyType = type_to_go_type(t->get_key_type());
+        string keyType = type_to_go_key_type(t->get_key_type());
         string valueType = type_to_go_type(t->get_val_type());
         return string("map[") + keyType + "]" + valueType;
     } else if (type->is_set()) {
         t_set* t = (t_set*)type;
-        string elemType = type_to_go_type(t->get_elem_type());
+        string elemType = type_to_go_key_type(t->get_elem_type());
         return string("map[") + elemType + string("]bool");
     } else if (type->is_list()) {
         t_list* t = (t_list*)type;
