@@ -752,7 +752,7 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
         indent(out) << value->get_integer();
     } else if (type->is_struct() || type->is_xception()) {
         out <<
-            "New" << publicize(type->get_name()) << "()";
+            "&" << publicize(type->get_name()) << "{";
         indent_up();
         const vector<t_field*>& fields = ((t_struct*)type)->get_members();
         vector<t_field*>::const_iterator f_iter;
@@ -774,7 +774,7 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
 
             if (field_type->is_base_type() || field_type->is_enum()) {
                 out << endl <<
-                    indent() << name << "." << publicize(v_iter->first->get_string()) << " = " << render_const_value(field_type, v_iter->second, name);
+                    indent() << publicize(v_iter->first->get_string()) << ": " << render_const_value(field_type, v_iter->second, name) << ",";
             } else {
                 string k(tmp("k"));
                 string v(tmp("v"));
@@ -783,6 +783,7 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
                     indent() << name << "." << publicize(v_iter->first->get_string()) << " = " << v;
             }
         }
+        out << "}";
 
         indent_down();
     } else if (type->is_map()) {
