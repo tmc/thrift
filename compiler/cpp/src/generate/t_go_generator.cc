@@ -944,7 +944,7 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
             // This fills in default values, as opposed to nulls
             out <<
                 indent() << publicize((*m_iter)->get_name()) << " " <<
-                type_to_enum((*m_iter)->get_type()) << endl;
+                type_to_go_type((*m_iter)->get_type()) << endl;
         }
     }
 
