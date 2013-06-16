@@ -2484,10 +2484,16 @@ void t_go_generator::generate_deserialize_field(ofstream &out,
             ", %s\", err)" << endl;
 
         out << "} else {" << endl;
+        string wrap;
         if (type->is_enum() || orig_type->is_typedef()) {
-            indent(out) << name << " = " << publicize(orig_type->get_name()) << "(v)" << endl;
-        } else {
+            wrap = publicize(orig_type->get_name());
+        } else if (((t_base_type*)type)->get_base() == t_base_type::TYPE_BYTE) {
+            wrap = "int8";
+        }
+        if (wrap == "") {
             indent(out) << name << " = v" << endl;
+        } else {
+            indent(out) << name << " = " << wrap << "(v)" << endl;
         }
         out << "}" << endl;
     } else {
