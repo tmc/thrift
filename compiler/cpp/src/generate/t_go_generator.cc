@@ -2425,6 +2425,10 @@ void t_go_generator::generate_deserialize_field(ofstream &out,
         generate_deserialize_container(out, type, declare, name, err);
     } else if (type->is_base_type() || type->is_enum()) {
 
+        if (declare) {
+            out << "var " << tfield->get_name() << " " << type_to_go_type(tfield->get_type()) << endl;
+        }
+
         indent(out) <<
                     "if v, err := iprot.";
 
