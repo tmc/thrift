@@ -618,13 +618,13 @@ void t_go_generator::generate_enum(t_enum* tenum)
     std::string tenum_name(publicize(tenum->get_name()));
     generate_go_docstring(f_types_, tenum);
     f_types_ <<
-             "type " << tenum_name << " int" << endl <<
+             "type " << tenum_name << " int64" << endl <<
              "const (" << endl;
     to_string_mapping <<
                       indent() << "func (p " << tenum_name << ") String() string {" << endl <<
                       indent() << "  switch p {" << endl;
     from_string_mapping <<
-                        indent() << "func From" << tenum_name << "String(s string) " << tenum_name << " {" << endl <<
+                        indent() << "func " << tenum_name << "FromString(s string) (" << tenum_name << ", error) {" << endl <<
                         indent() << "  switch s {" << endl;
     vector<t_enum_value*> constants = tenum->get_constants();
     vector<t_enum_value*>::iterator c_iter;
@@ -647,10 +647,12 @@ void t_go_generator::generate_enum(t_enum* tenum)
 
         if (iter_std_name != escape_string(iter_name)) {
             from_string_mapping <<
-                                indent() << "  case \"" << tenum_name << "_" << iter_std_name << "\", \"" << escape_string(iter_name) << "\": return " << tenum_name << "_" << iter_name << endl;
+                                indent() << "  case \"" << tenum_name << "_" << iter_std_name << "\", \"" << escape_string(iter_name) << "\": return " <<
+                                tenum_name << "_" << iter_name << ", nil " << endl;
         } else {
             from_string_mapping <<
-                                indent() << "  case \"" << tenum_name << "_" << iter_std_name << "\": return " << tenum_name << "_" << iter_name << endl;
+                                indent() << "  case \"" << tenum_name << "_" << iter_std_name << "\": return " <<
+                                tenum_name << "_" << iter_name << ", nil "  << endl;
         }
     }
 
@@ -660,7 +662,8 @@ void t_go_generator::generate_enum(t_enum* tenum)
                       indent() << "}" << endl;
     from_string_mapping <<
                         indent() << "  }" << endl <<
-                        indent() << "  return " << tenum_name << "(math.MinInt32 - 1)" << endl <<
+                        indent() << "  return " << tenum_name << "(math.MinInt32 - 1)," <<
+                        " fmt.Errorf(\"not a valid " << tenum_name << " string\")" << endl <<
                         indent() << "}" << endl;
 
     f_types_ << ")" << endl << endl
