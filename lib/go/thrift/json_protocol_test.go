@@ -480,8 +480,8 @@ func TestWriteJSONProtocolList(t *testing.T) {
 	if len(l) < 2 {
 		t.Fatalf("List must be at least of length two to include metadata")
 	}
-	if int(l[0].(float64)) != DOUBLE {
-		t.Fatal("Invalid type for list, expected: ", DOUBLE, ", but was: ", l[0])
+	if l[0] != "dbl" {
+		t.Fatal("Invalid type for list, expected: ", STRING, ", but was: ", l[0])
 	}
 	if int(l[1].(float64)) != len(DOUBLE_VALUES) {
 		t.Fatal("Invalid length for list, expected: ", len(DOUBLE_VALUES), ", but was: ", l[1])
@@ -534,7 +534,7 @@ func TestWriteJSONProtocolSet(t *testing.T) {
 	if len(l) < 2 {
 		t.Fatalf("Set must be at least of length two to include metadata")
 	}
-	if int(l[0].(float64)) != DOUBLE {
+	if l[0] != "dbl" {
 		t.Fatal("Invalid type for set, expected: ", DOUBLE, ", but was: ", l[0])
 	}
 	if int(l[1].(float64)) != len(DOUBLE_VALUES) {

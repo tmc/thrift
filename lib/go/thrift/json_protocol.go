@@ -432,6 +432,34 @@ func (p *TJSONProtocol) Transport() TTransport {
 	return p.trans
 }
 
+func (p *TJSONProtocol) OutputElemListBegin(elemType TType, size int) error {
+	if e := p.OutputListBegin(); e != nil {
+		return e
+	}
+	if e := p.WriteString(p.TypeIdToString(elemType)); e != nil {
+		return e
+	}
+	if e := p.WriteI64(int64(size)); e != nil {
+		return e
+	}
+	return nil
+}
+
+
+func (p *TJSONProtocol) ParseElemListBegin() (elemType TType, size int, e error) {
+	if isNull, e := p.ParseListBegin(); isNull || e != nil {
+		return VOID, 0, e
+	}
+	sElemType, err := p.ReadString()
+	elemType = p.StringToTypeId(sElemType)
+	if err != nil {
+		return elemType, size, err
+	}
+	nSize, err2 := p.ReadI64()
+	size = int(nSize)
+	return elemType, size, err2
+}
+
 func (p *TJSONProtocol) readElemListBegin() (elemType TType, size int, e error) {
 	if isNull, e := p.ParseListBegin(); isNull || e != nil {
 		return VOID, 0, e
