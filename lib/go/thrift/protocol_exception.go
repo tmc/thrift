@@ -69,6 +69,9 @@ func NewTProtocolException(err error) TProtocolException {
 }
 
 func NewTProtocolExceptionWithType(errType int, err error) TProtocolException {
+	if err == nil {
+		return nil
+	}
 	return &tProtocolException{errType, err.Error()}
 }
 

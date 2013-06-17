@@ -25,18 +25,15 @@ import (
 	"tutorial"
 )
 
-func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory) {
+func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory) error {
 	transport, err := thrift.NewTServerSocket("localhost:9090")
 	if err != nil {
-		fmt.Println("Error creating server socket: ", err)
-		return
+		return err
 	}
 	handler := NewCalculatorHandler()
 	processor := tutorial.NewCalculatorProcessor(handler)
 	server := thrift.NewTSimpleServer4(processor, transport, transportFactory, protocolFactory)
 
 	fmt.Println("Starting the simple server... on ", transport.Addr())
-	if err = server.Serve(); err != nil {
-		fmt.Println("Error during simple server: ", err)
-	}
+	return server.Serve()
 }

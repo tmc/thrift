@@ -27,7 +27,7 @@ import (
 )
 
 func Usage() {
-	fmt.Fprint(os.Stderr, "Usage of ", os.Args[0], " <--server | --client>:\n")
+	fmt.Fprint(os.Stderr, "Usage of ", os.Args[0], ":\n")
 	flag.PrintDefaults()
 	fmt.Fprint(os.Stderr, "\n")
 }
@@ -61,8 +61,12 @@ func main() {
 	}
 
 	if *server {
-		runServer(transportFactory, protocolFactory)
+		if err := runServer(transportFactory, protocolFactory); err != nil {
+			fmt.Println("error running server:", err)
+		}
 	} else {
-		runClient(transportFactory, protocolFactory)
+		if err := runClient(transportFactory, protocolFactory); err != nil {
+			fmt.Println("error running client:", err)
+		}
 	}
 }
