@@ -1054,7 +1054,7 @@ void t_go_generator::generate_isset_helpers(ofstream& out,
                         indent() << "return p." << field_name << " != nil" << endl;
                 } else {
                     out <<
-                        indent() << "return p." << field_name << " != nil && p." << field_name << ".Len() > 0" << endl;
+                        indent() << "return p." << field_name << " != nil && len(p." << field_name << ") > 0" << endl;
                 }
             } else if (type->is_map()) {
                 if (field_default_value != NULL && field_default_value->get_map().size() > 0) {
@@ -1062,7 +1062,7 @@ void t_go_generator::generate_isset_helpers(ofstream& out,
                         indent() << "return p." << field_name << " != nil" << endl;
                 } else {
                     out <<
-                        indent() << "return p." << field_name << " != nil && p." << field_name << ".Len() > 0" << endl;
+                        indent() << "return p." << field_name << " != nil && len(p." << field_name << ") > 0" << endl;
                 }
             } else {
                 throw "CANNOT GENERATE ISSET HELPERS FOR TYPE: " + type->get_name();
