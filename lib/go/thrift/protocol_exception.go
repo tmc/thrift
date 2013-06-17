@@ -55,55 +55,20 @@ func (p *tProtocolException) Error() string {
 	return p.message
 }
 
-func NewTProtocolException(t int, m string) TProtocolException {
-	return &tProtocolException{typeId: t, message: m}
-}
-
-func NewTProtocolExceptionReadField(fieldId int, fieldName string, structName string, err error) TProtocolException {
-	e := err.(TProtocolException)
-	t := e.TypeId()
-	if t == UNKNOWN_PROTOCOL_EXCEPTION {
-		t = INVALID_DATA
-	}
-	return NewTProtocolException(t, "Unable to read field "+string(fieldId)+" ("+fieldName+") in "+structName+" due to: "+e.Error())
-}
-
-func NewTProtocolExceptionWriteField(fieldId int, fieldName string, structName string, err error) TProtocolException {
-	e := err.(TProtocolException)
-	t := e.TypeId()
-	if t == UNKNOWN_PROTOCOL_EXCEPTION {
-		t = INVALID_DATA
-	}
-	return NewTProtocolException(t, "Unable to write field "+string(fieldId)+" ("+fieldName+") in "+structName+" due to: "+e.Error())
-}
-
-func NewTProtocolExceptionReadStruct(structName string, err error) TProtocolException {
-	e := err.(TProtocolException)
-	t := e.TypeId()
-	if t == UNKNOWN_PROTOCOL_EXCEPTION {
-		t = INVALID_DATA
-	}
-	return NewTProtocolException(t, "Unable to read struct "+structName+" due to: "+e.Error())
-}
-
-func NewTProtocolExceptionWriteStruct(structName string, err error) TProtocolException {
-	e := err.(TProtocolException)
-	t := e.TypeId()
-	if t == UNKNOWN_PROTOCOL_EXCEPTION {
-		t = INVALID_DATA
-	}
-	return NewTProtocolException(t, "Unable to write struct "+structName+" due to: "+e.Error())
-}
-
-func newTProtocolExceptionFromError(e error) TProtocolException {
-	if e == nil {
+func NewTProtocolException(err error) TProtocolException {
+	if err == nil {
 		return nil
 	}
-	if t, ok := e.(TProtocolException); ok {
-		return t
+	if e,ok := err.(TProtocolException); ok {
+		return e
 	}
-	if _, ok := e.(base64.CorruptInputError); ok {
-		return NewTProtocolException(INVALID_DATA, e.Error())
+	if _, ok := err.(base64.CorruptInputError); ok {
+		return &tProtocolException{INVALID_DATA, err.Error()}
 	}
-	return &tProtocolException{UNKNOWN_PROTOCOL_EXCEPTION, e.Error()}
+	return &tProtocolException{UNKNOWN_PROTOCOL_EXCEPTION, err.Error()}
 }
+
+func NewTProtocolExceptionWithType(errType int, err error) TProtocolException {
+	return &tProtocolException{errType, err.Error()}
+}
+

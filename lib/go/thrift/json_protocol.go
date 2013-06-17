@@ -184,7 +184,7 @@ func (p *TJSONProtocol) WriteBinary(v []byte) error {
 	p.writer.Write(JSON_QUOTE_BYTES)
 	writer := base64.NewEncoder(base64.StdEncoding, p.writer)
 	if _, e := writer.Write(v); e != nil {
-		return newTProtocolExceptionFromError(e)
+		return NewTProtocolException(e)
 	}
 	writer.Close()
 	p.writer.Write(JSON_QUOTE_BYTES)
@@ -202,7 +202,9 @@ func (p *TJSONProtocol) ReadMessageBegin() (name string, typeId TMessageType, se
 		return name, typeId, seqId, err
 	}
 	if version != THRIFT_JSON_PROTOCOL_VERSION {
-		return name, typeId, seqId, NewTProtocolException(INVALID_DATA, fmt.Sprint("Unknown Protocol version ", version, ", expected version ", THRIFT_JSON_PROTOCOL_VERSION, "\n"))
+		e := fmt.Errorf("Unknown Protocol version %d, expected version %d", version, THRIFT_JSON_PROTOCOL_VERSION)
+		return name, typeId, seqId, NewTProtocolExceptionWithType(INVALID_DATA, e)
+
 	}
 	if name, err = p.ReadString(); err != nil {
 		return name, typeId, seqId, err
@@ -314,7 +316,8 @@ func (p *TJSONProtocol) ReadBool() (bool, error) {
 				p.reader.Read(b[0:len(JSON_TRUE)])
 				value = true
 			} else {
-				return value, NewTProtocolException(INVALID_DATA, "Expected \"true\" but found: "+string(b))
+				e := fmt.Errorf("Expected \"true\" but found: %s", string(b))
+				return value, NewTProtocolExceptionWithType(INVALID_DATA, e)
 			}
 			break
 		case JSON_FALSE[0]:
@@ -322,7 +325,8 @@ func (p *TJSONProtocol) ReadBool() (bool, error) {
 				p.reader.Read(b[0:len(JSON_FALSE)])
 				value = false
 			} else {
-				return value, NewTProtocolException(INVALID_DATA, "Expected \"false\" but found: "+string(b))
+				e := fmt.Errorf("Expected \"false\" but found: %s", string(b))
+				return value, NewTProtocolExceptionWithType(INVALID_DATA, e)
 			}
 			break
 		case JSON_NULL[0]:
@@ -330,10 +334,12 @@ func (p *TJSONProtocol) ReadBool() (bool, error) {
 				p.reader.Read(b[0:len(JSON_NULL)])
 				value = false
 			} else {
-				return value, NewTProtocolException(INVALID_DATA, "Expected \"null\" but found: "+string(b))
+				e := fmt.Errorf("Expected \"null\" but found: %s", string(b))
+				return value, NewTProtocolExceptionWithType(INVALID_DATA, e)
 			}
 		default:
-			return value, NewTProtocolException(INVALID_DATA, "Expected \"true\", \"false\", or \"null\" but found: "+string(b))
+			e := fmt.Errorf("Expected \"true\", \"false\", or \"null\" but found: %s", string(b))
+			return value, NewTProtocolExceptionWithType(INVALID_DATA, e)
 		}
 	}
 	return value, p.ParsePostValue()
@@ -380,10 +386,11 @@ func (p *TJSONProtocol) ReadString() (string, error) {
 	} else if len(b) >= len(JSON_NULL) && string(b[0:len(JSON_NULL)]) == string(JSON_NULL) {
 		_, err := p.reader.Read(b[0:len(JSON_NULL)])
 		if err != nil {
-			return v, newTProtocolExceptionFromError(err)
+			return v, NewTProtocolException(err)
 		}
 	} else {
-		return v, NewTProtocolException(INVALID_DATA, fmt.Sprint("Expected a JSON string, found ", string(b)))
+		e := fmt.Errorf("Expected a JSON string, found %s", string(b))
+		return v, NewTProtocolExceptionWithType(INVALID_DATA, e)
 	}
 	return v, p.ParsePostValue()
 }
@@ -404,16 +411,17 @@ func (p *TJSONProtocol) ReadBinary() ([]byte, error) {
 	} else if len(b) >= len(JSON_NULL) && string(b[0:len(JSON_NULL)]) == string(JSON_NULL) {
 		_, err := p.reader.Read(b[0:len(JSON_NULL)])
 		if err != nil {
-			return v, newTProtocolExceptionFromError(err)
+			return v, NewTProtocolException(err)
 		}
 	} else {
-		return v, NewTProtocolException(INVALID_DATA, fmt.Sprint("Expected a JSON string, found ", string(b)))
+		e := fmt.Errorf("Expected a JSON string, found %s", string(b))
+		return v, NewTProtocolExceptionWithType(INVALID_DATA, e)
 	}
 	return v, p.ParsePostValue()
 }
 
 func (p *TJSONProtocol) Flush() (err error) {
-	return newTProtocolExceptionFromError(p.writer.Flush())
+	return NewTProtocolException(p.writer.Flush())
 }
 
 func (p *TJSONProtocol) Skip(fieldType TType) (err error) {
