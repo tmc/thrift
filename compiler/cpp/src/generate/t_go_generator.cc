@@ -2186,9 +2186,9 @@ void t_go_generator::generate_service_server(t_service* tservice)
                    indent() << "func (p *" << serviceName << "Processor) AddToProcessorMap(key string, processor thrift.TProcessorFunction) {" << endl <<
                    indent() << "  p.processorMap[key] = processor" << endl <<
                    indent() << "}" << endl << endl <<
-                   indent() << "func (p *" << serviceName << "Processor) GetProcessorFunction(key string) (processor thrift.TProcessorFunction, exists bool) {" << endl <<
-                   indent() << "  processor, exists = p.processorMap[key]" << endl <<
-                   indent() << "  return processor, exists" << endl <<
+                   indent() << "func (p *" << serviceName << "Processor) GetProcessorFunction(key string) (processor thrift.TProcessorFunction, ok bool) {" << endl <<
+                   indent() << "  processor, ok = p.processorMap[key]" << endl <<
+                   indent() << "  return processor, ok" << endl <<
                    indent() << "}" << endl << endl <<
                    indent() << "func (p *" << serviceName << "Processor) ProcessorMap() map[string]thrift.TProcessorFunction {" << endl <<
                    indent() << "  return p.processorMap" << endl <<
@@ -2208,9 +2208,10 @@ void t_go_generator::generate_service_server(t_service* tservice)
                    indent() << "}" << endl << endl <<
                    indent() << "func (p *" << serviceName << "Processor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {" << endl <<
                    indent() << "  name, _, seqId, err := iprot.ReadMessageBegin()" << endl <<
-                   indent() << "  if err != nil { return }" << endl <<
-                   indent() << "  process, nameFound := p.GetProcessorFunction(name)" << endl <<
-                   indent() << "  if !nameFound || process == nil {" << endl <<
+                   indent() << "  if err != nil { return false, err }" << endl <<
+                   indent() << "  if processor, ok := p.GetProcessorFunction(name); ok {" << endl <<
+                   indent() << "    return processor.Process(seqId, iprot, oprot)" << endl <<
+                   indent() << "  } else {" << endl <<
                    indent() << "    iprot.Skip(thrift.STRUCT)" << endl <<
                    indent() << "    iprot.ReadMessageEnd()" << endl <<
                    indent() << "    " << x << " := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, \"Unknown function \" + name)" << endl <<
@@ -2220,7 +2221,6 @@ void t_go_generator::generate_service_server(t_service* tservice)
                    indent() << "    oprot.Flush()" << endl <<
                    indent() << "    return false, " << x << endl <<
                    indent() << "  }" << endl <<
-                   indent() << "  return process.Process(seqId, iprot, oprot)" << endl <<
                    indent() << "}" << endl << endl;
     } else {
         f_service_ <<
