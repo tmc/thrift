@@ -1633,7 +1633,7 @@ void t_go_generator::generate_service_client(t_service* tservice)
         f_service_ <<
                    indent() << "err = " << args << ".Write(oprot)" << endl <<
                    indent() << "oprot.WriteMessageEnd()" << endl <<
-                   indent() << "oprot.Transport().Flush()" << endl <<
+                   indent() << "oprot.Flush()" << endl <<
                    indent() << "return" << endl;
         indent_down();
         f_service_ <<
@@ -2214,7 +2214,7 @@ void t_go_generator::generate_service_server(t_service* tservice)
                    indent() << "    oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)" << endl <<
                    indent() << "    " << x << ".Write(oprot)" << endl <<
                    indent() << "    oprot.WriteMessageEnd()" << endl <<
-                   indent() << "    oprot.Transport().Flush()" << endl <<
+                   indent() << "    oprot.Flush()" << endl <<
                    indent() << "    return false, " << x << endl <<
                    indent() << "  }" << endl <<
                    indent() << "  return process.Process(seqId, iprot, oprot)" << endl <<
@@ -2275,7 +2275,7 @@ void t_go_generator::generate_process_function(t_service* tservice,
                indent() << "  oprot.WriteMessageBegin(\"" << escape_string(tfunction->get_name()) << "\", thrift.EXCEPTION, seqId)" << endl <<
                indent() << "  x.Write(oprot)" << endl <<
                indent() << "  oprot.WriteMessageEnd()" << endl <<
-               indent() << "  oprot.Transport().Flush()" << endl <<
+               indent() << "  oprot.Flush()" << endl <<
                indent() << "  return" << endl <<
                indent() << "}" << endl <<
                indent() << "iprot.ReadMessageEnd()" << endl <<
@@ -2319,7 +2319,7 @@ void t_go_generator::generate_process_function(t_service* tservice,
                indent() << "  oprot.WriteMessageBegin(\"" << escape_string(tfunction->get_name()) << "\", thrift.EXCEPTION, seqId)" << endl <<
                indent() << "  x.Write(oprot)" << endl <<
                indent() << "  oprot.WriteMessageEnd()" << endl <<
-               indent() << "  oprot.Transport().Flush()" << endl <<
+               indent() << "  oprot.Flush()" << endl <<
                indent() << "  return" << endl <<
                indent() << "}" << endl <<
                indent() << "if err2 := oprot.WriteMessageBegin(\"" << escape_string(tfunction->get_name()) << "\", thrift.REPLY, seqId); err2 != nil {" << endl <<
@@ -2331,7 +2331,7 @@ void t_go_generator::generate_process_function(t_service* tservice,
                indent() << "if err2 := oprot.WriteMessageEnd(); err == nil && err2 != nil {" << endl <<
                indent() << "  err = err2" << endl <<
                indent() << "}" << endl <<
-               indent() << "if err2 := oprot.Transport().Flush(); err == nil && err2 != nil {" << endl <<
+               indent() << "if err2 := oprot.Flush(); err == nil && err2 != nil {" << endl <<
                indent() << "  err = err2" << endl <<
                indent() << "}" << endl <<
                indent() << "if err != nil {" << endl <<
@@ -2351,7 +2351,7 @@ void t_go_generator::generate_process_function(t_service* tservice,
       indent() << "oprot.WriteMessageBegin(\"" << escape_string(tfunction->get_name()) << "\", thrift.REPLY, seqid)" << endl <<
       indent() << "result.Write(oprot)" << endl <<
       indent() << "oprot.WriteMessageEnd()" << endl <<
-      indent() << "oprot.Transport().Flush()" << endl <<
+      indent() << "oprot.Flush()" << endl <<
       indent() << "return" << endl;
     indent_down();
     f_service_ <<
@@ -2386,7 +2386,7 @@ void t_go_generator::generate_process_function(t_service* tservice,
         indent() << "if err != nil { return err }" << endl <<
         indent() << "err = oprot.WriteMessageEnd()" << endl <<
         indent() << "if err != nil { return err }" << endl <<
-        indent() << "err = oprot.Transport().Flush()" << endl <<
+        indent() << "err = oprot.Flush()" << endl <<
         indent() << "if err != nil { return err }" << endl;
       indent_down();
       f_service_ << "}" << endl << endl;

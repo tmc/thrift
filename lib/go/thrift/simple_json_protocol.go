@@ -28,7 +28,6 @@ import (
 	"io"
 	"math"
 	"strconv"
-	"strings"
 )
 
 type _ParseContext int
@@ -67,29 +66,19 @@ func (p _ParseContext) String() string {
 // confused with the full-featured TJSONProtocol.
 //
 type TSimpleJSONProtocol struct {
-	//TProtocolBase;
 	trans TTransport
 
-	/**
-	 * Stack of nested contexts that we may be in.
-	 */
 	parseContextStack []int
-	/**
-	 * Stack of nested contexts that we may be in.
-	 */
 	dumpContext []int
 
-	/**
-	 * Current context that we are in
-	 */
-	writer TTransport
+	writer *bufio.Writer
 	reader *bufio.Reader
 }
 
 // Constructor
 func NewTSimpleJSONProtocol(t TTransport) *TSimpleJSONProtocol {
 	v := &TSimpleJSONProtocol{trans: t,
-		writer: t,
+		writer: bufio.NewWriter(t),
 		reader: bufio.NewReader(t),
 	}
 	v.parseContextStack = append(v.parseContextStack, int(_CONTEXT_IN_TOPLEVEL))
@@ -425,11 +414,11 @@ func (p *TSimpleJSONProtocol) ReadBool() (bool, error) {
 	if err := p.ParsePreValue(); err != nil {
 		return value, err
 	}
-	b, _ := p.reader.Peek(len(JSON_FALSE))
+	b, _ := p.reader.Peek(len(JSON_TRUE))
 	if len(b) > 0 {
 		switch b[0] {
 		case JSON_TRUE[0]:
-			if string(b[0:len(JSON_TRUE)]) == string(JSON_TRUE) {
+			if string(b) == string(JSON_TRUE) {
 				p.reader.Read(b[0:len(JSON_TRUE)])
 				value = true
 			} else {
@@ -438,7 +427,7 @@ func (p *TSimpleJSONProtocol) ReadBool() (bool, error) {
 			}
 			break
 		case JSON_FALSE[0]:
-			if string(b[0:len(JSON_FALSE)]) == string(JSON_FALSE) {
+			if string(b) == string(JSON_FALSE[:len(b)]) {
 				p.reader.Read(b[0:len(JSON_FALSE)])
 				value = false
 			} else {
@@ -447,7 +436,7 @@ func (p *TSimpleJSONProtocol) ReadBool() (bool, error) {
 			}
 			break
 		case JSON_NULL[0]:
-			if string(b[0:len(JSON_NULL)]) == string(JSON_NULL) {
+			if string(b) == string(JSON_NULL) {
 				p.reader.Read(b[0:len(JSON_NULL)])
 				value = false
 			} else {
@@ -492,7 +481,12 @@ func (p *TSimpleJSONProtocol) ReadString() (string, error) {
 	if err := p.ParsePreValue(); err != nil {
 		return v, err
 	}
-	b, _ := p.reader.Peek(len(JSON_NULL))
+	var b []byte
+	if p.reader.Buffered() >= len(JSON_NULL) {
+		b, _ = p.reader.Peek(len(JSON_NULL))
+	} else {
+		b, _ = p.reader.Peek(1)
+	}
 	if len(b) > 0 && b[0] == JSON_QUOTE {
 		p.reader.ReadByte()
 		value, err := p.ParseStringBody()
@@ -672,7 +666,7 @@ func (p *TSimpleJSONProtocol) OutputString(s string) error {
 }
 
 func (p *TSimpleJSONProtocol) OutputStringData(s string) error {
-	_, e := io.CopyN(p.writer, strings.NewReader(s), int64(len(s)))
+	_, e := p.writer.Write([]byte(s))
 	return NewTProtocolException(e)
 }
 
@@ -955,7 +949,12 @@ func (p *TSimpleJSONProtocol) ParseObjectStart() (bool, error) {
 	if err := p.ParsePreValue(); err != nil {
 		return false, err
 	}
-	b, _ := p.reader.Peek(len(JSON_NULL))
+	var b []byte
+	if p.reader.Buffered() >= len(JSON_NULL) {
+		b, _ = p.reader.Peek(len(JSON_NULL))
+	} else if p.reader.Buffered() >= 1 {
+		b, _ = p.reader.Peek(1)
+	}
 	if len(b) > 0 && b[0] == JSON_LBRACE[0] {
 		p.reader.ReadByte()
 		p.parseContextStack = append(p.parseContextStack, int(_CONTEXT_IN_OBJECT_FIRST))
@@ -993,20 +992,29 @@ func (p *TSimpleJSONProtocol) ParseObjectEnd() error {
 	return p.ParsePostValue()
 }
 
-func (p *TSimpleJSONProtocol) ParseListBegin() (bool, error) {
+func (p *TSimpleJSONProtocol) ParseListBegin() (isNull bool, err error) {
 	if e := p.ParsePreValue(); e != nil {
 		return false, e
 	}
-	b, e := p.reader.Peek(len(JSON_NULL))
-	if e == nil && len(b) >= 1 && b[0] == JSON_LBRACKET[0] {
+	var b []byte
+	if p.reader.Buffered() >= len(JSON_NULL) {
+		b, err = p.reader.Peek(len(JSON_NULL))
+	} else {
+		b, err = p.reader.Peek(1)
+	}
+	if err != nil {
+		return false, err
+	}
+	if len(b) >= 1 && b[0] == JSON_LBRACKET[0] {
 		p.parseContextStack = append(p.parseContextStack, int(_CONTEXT_IN_LIST_FIRST))
 		p.reader.ReadByte()
-		return false, nil
-	} else if e == nil && len(b) >= len(JSON_NULL) && string(b) == string(JSON_NULL) {
-		return true, nil
+		isNull = false
+	} else if len(b) >= len(JSON_NULL) && string(b) == string(JSON_NULL) {
+		isNull = true
+	} else {
+		err = fmt.Errorf("Expected \"null\" or \"[\", received %q", b)
 	}
-	e = fmt.Errorf("Expected 'null' or '{', received '%q'", b)
-	return false, NewTProtocolExceptionWithType(INVALID_DATA, e)
+	return isNull, NewTProtocolExceptionWithType(INVALID_DATA, err)
 }
 
 func (p *TSimpleJSONProtocol) ParseElemListBegin() (elemType TType, size int, e error) {
